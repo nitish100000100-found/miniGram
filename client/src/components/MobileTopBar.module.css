@@ -1,0 +1,38 @@
+.topBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 15px;
+  border-bottom: 1px solid #ddd;
+}
+
+.right {
+  display: flex;
+  gap: 15px;
+}
+.topBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.brand h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #8b5cf6;
+}

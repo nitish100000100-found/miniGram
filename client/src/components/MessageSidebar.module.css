@@ -1,0 +1,11 @@
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.search {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}

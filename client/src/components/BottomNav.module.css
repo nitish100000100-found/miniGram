@@ -1,0 +1,12 @@
+.bottomNav {
+  position: sticky;
+  bottom: 0;
+
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+
+  padding: 15px;
+  border-top: 1px solid #ddd;
+  background: white;
+}
