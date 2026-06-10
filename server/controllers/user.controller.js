@@ -2,6 +2,7 @@ import User from "../models/user.model.js";
 import mongoose from "mongoose";
 import path from "path";
 import { uploadToCloudinary, cloudinary } from "../config/cloudinary.js";
+import Post from "../models/post.model.js";
 const getCurrentUser = async (req, res) => {
   try {
     const userId = req.userId;
@@ -125,24 +126,51 @@ const editProfile = async (req, res, next) => {
   }
 };
 
-const getProfile = async (req, res) => {
+const lookFor = async (req, res) => {
   try {
-    const username = req.params.username;
+    const { id } = req.params;
 
-    const user = await User.findOne({ username }).select("-password");
+    const profileUser = await User.findById(id)
+      .select("-password")
+      .populate("posts");
 
-    if (!user) {
+    if (!profileUser) {
       return res.status(404).json({
         message: "User not found",
       });
     }
 
-    return res.status(200).json(user);
+    const currentUserId = req.userId;
+
+    const isFollowing = profileUser.followers.some(
+      (followerId) => followerId.toString() === currentUserId
+    );
+
+    if (profileUser.isPrivate && !isFollowing) {
+      const userData = profileUser.toObject();
+
+      userData.followersLength = profileUser.followers.length;
+      userData.followingLength = profileUser.following.length;
+
+      userData.posts = [];
+      userData.followers = [];
+      userData.following = [];
+      userData.savedPosts = [];
+      userData.likedPosts = [];
+      userData.sendRequest = [];
+      userData.receivedRequest = [];
+      userData.highlights = [];
+
+      return res.status(200).json(userData);
+    }
+
+    return res.status(200).json(profileUser);
   } catch (error) {
+   
     return res.status(500).json({
-      message: `Get profile error: ${error.message}`,
+      message: error.message,
     });
   }
 };
 
-export { getCurrentUser, suggestedUsers, editProfile, getProfile };
+export { getCurrentUser, suggestedUsers, editProfile, lookFor};

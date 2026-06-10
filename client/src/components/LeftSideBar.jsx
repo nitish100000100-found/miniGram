@@ -9,7 +9,7 @@ function LeftSidebar() {
       <div className={styles.topBar}>
         <div className={styles.brand}>
           <img src="/favicon-v2.svg" alt="miniGram logo" />
-          <h2>miniGram</h2>
+          <h2>MiniGram</h2>
         </div>
 
         <button className={styles.heartBtn}>

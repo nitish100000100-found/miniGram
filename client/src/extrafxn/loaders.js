@@ -1,7 +1,6 @@
 import { redirect } from "react-router-dom";
 import axios from "axios";
-import store from "../redux/store.js";
-import { setDataUser } from "../redux/userSlice.js";
+
 
 
 
@@ -15,7 +14,6 @@ export const protectedLoader = async () => {
       }
     );
 
-    store.dispatch(setDataUser(res.data.user));
 
     return null;
   } catch (error) {

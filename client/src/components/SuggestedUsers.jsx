@@ -66,7 +66,7 @@ function SuggestedUsers() {
               <FaTimes />
             </button>
 
-            <Link to={`/lookfor/${user._id}`} className={styles.userLink}>
+            <Link to={`/lookFor/${user._id}`} className={styles.userLink}>
               <img
                 src={user.profilePicture || "/insta.webp"}
                 alt={user.name}

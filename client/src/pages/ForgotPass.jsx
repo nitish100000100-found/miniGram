@@ -4,6 +4,7 @@ import styles from "./forgotpass.module.css";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { ClipLoader } from "react-spinners";
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -14,6 +15,7 @@ const ForgotPassword = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
+  const navigate = useNavigate();
   useEffect(() => {
     let interval;
 
@@ -155,9 +157,7 @@ const ForgotPassword = () => {
       savedEmailRef.current = "";
       setResendTimer(0);
 
-      setTimeout(() => {
-        setStep(1);
-      }, 1000);
+      navigate("/signin")
     } catch (error) {
       showNotification(
         error.response?.data?.message || "Something went wrong",

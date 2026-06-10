@@ -3,14 +3,14 @@ import { Link } from "react-router-dom";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import axios from "axios";
 import styles from "./signIn.module.css";
-import { useDispatch } from "react-redux";
-import { setDataUser } from "../redux/userSlice.js";
+
+
 import { useNavigate } from "react-router-dom";
 
 const SignIn = () => {
   const [errors, setErrors] = useState([]);
   const [showPassword, setShowPassword] = useState(false);
-  const dispatch = useDispatch();
+
   const navigate = useNavigate();
   const handleSignIn = async (e) => {
     e.preventDefault();
@@ -51,7 +51,7 @@ const SignIn = () => {
       setErrors([]);
       form.reset();
 
-      dispatch(setDataUser(response.data));
+    
       navigate("/");
     } catch (error) {
       if (

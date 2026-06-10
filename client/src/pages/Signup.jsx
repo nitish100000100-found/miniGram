@@ -1,15 +1,14 @@
 import { useState, useRef, useEffect } from "react";
-import { useDispatch } from "react-redux";
+
 import { Link } from "react-router-dom";
 import styles from "./signUp.module.css";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { ClipLoader } from "react-spinners";
 import axios from "axios";
-import { setDataUser } from "../redux/userSlice.js";
+
 import { useNavigate } from "react-router-dom";
 
 const Signup = () => {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const [errors, setErrors] = useState([]);
@@ -183,7 +182,7 @@ const Signup = () => {
           withCredentials: true,
         },
       );
-      dispatch(setDataUser(response.data));
+
       setErrors([]);
       setOtp("");
       setIsOtpSent(false);
@@ -199,9 +198,7 @@ const Signup = () => {
 
       showNotification("Account created successfully!", "success");
 
-      setTimeout(() => {
-        navigate("/");
-      }, 2000);
+      navigate("/");
     } catch (error) {
       setErrors([
         error?.response?.data?.message || "An unexpected error occurred.",

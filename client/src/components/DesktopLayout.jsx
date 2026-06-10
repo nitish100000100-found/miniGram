@@ -11,7 +11,7 @@ function DesktopLayout() {
       <div className={styles.feedSection}>
         <Feed />
         <BottomNav />
-      </div>
+      </div> 
      
       <MessagesSideBar />
     </div>
