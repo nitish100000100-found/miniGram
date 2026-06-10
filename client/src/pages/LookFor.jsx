@@ -229,6 +229,10 @@ function LookFor() {
                 Follow
               </button>
             )}
+
+            {canViewProfile && (
+              <button className={styles.messageBtn}>Message</button>
+            )}
           </div>
           {user.commonUsers?.length > 0 && (
             <div className={styles.commonUsers}>
