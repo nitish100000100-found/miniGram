@@ -12,6 +12,7 @@ import ForgotPass from './pages/ForgotPass.jsx';
 import HomePage from './pages/HomePage.jsx';
 import LookFor from './pages/LookFor.jsx';
 import NotFound from "./pages/NotFound.jsx"
+import MyInfo from './pages/MyInfo.jsx';
 
 const router = createBrowserRouter([
   { path: "/", element: <HomePage /> , loader: protectedLoader},
@@ -30,6 +31,10 @@ const router = createBrowserRouter([
   {
     path: "/lookFor/:id",
     element: <LookFor/>,
+  },
+  {
+    path:"/myInfo",
+    element:<MyInfo/>
   },
 
   { path: "*", element: <NotFound/>},

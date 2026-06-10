@@ -111,3 +111,11 @@
 .logoutBtn:active {
   transform: scale(0.97);
 }
+.profileLink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+  flex: 1;
+}

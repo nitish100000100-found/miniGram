@@ -170,7 +170,7 @@ const sentOtp = async (req, res) => {
       },
       {
         upsert: true,
-         returnDocument: "after",
+        returnDocument: "after",
       },
     );
 
@@ -241,21 +241,24 @@ const forgotPassword = async (req, res) => {
       });
     }
 
-    const otpRecord = await OTP.findOne({ email });
-
     if (newPassword.length < 6) {
-      return res
-        .status(400)
-        .json({ message: "Password must be at least 6 characters long" });
+      return res.status(400).json({
+        message: "Password must be at least 6 characters long",
+      });
     }
+
+    const otpRecord = await OTP.findOne({ email });
 
     if (!otpRecord) {
       return res.status(400).json({
         message: "OTP not found",
       });
     }
+
     if (!otpRecord.isVerified) {
-      return res.status(400).json({ message: "Please verify OTP first" });
+      return res.status(400).json({
+        message: "Please verify OTP first",
+      });
     }
 
     if (otpRecord.expiresAt < new Date()) {
@@ -267,8 +270,11 @@ const forgotPassword = async (req, res) => {
     }
 
     const isOtpMatch = await bcrypt.compare(otp, otpRecord.otp);
+
     if (!isOtpMatch) {
-      return res.status(400).json({ message: "Invalid OTP" });
+      return res.status(400).json({
+        message: "Invalid OTP",
+      });
     }
 
     const user = await User.findOne({ email });
@@ -286,10 +292,24 @@ const forgotPassword = async (req, res) => {
 
     await OTP.deleteOne({ email });
 
+    const token = await genToken(user._id);
+    
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    const updatedUser = await User.findById(user._id).select("-password");
+
     return res.status(200).json({
       message: "Password reset successfully!",
+      user: updatedUser,
     });
   } catch (error) {
+     console.log("at forget pass catch")
     return res.status(500).json({
       message: `Internal Server Error: ${error.message}`,
     });
@@ -335,7 +355,7 @@ const sendSignupOtp = async (req, res) => {
       },
       {
         upsert: true,
-         returnDocument: "after",
+        returnDocument: "after",
       },
     );
 

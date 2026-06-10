@@ -26,16 +26,8 @@ app.get("/", (req, res, next) => {
   res.send("Hello World!");
 });
 
-app.use("/api/auth",authRouter);
+app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
-
-
-
-
-
-
-
-
 
 app.use((err, req, res, next) => {
   if (err.code === "LIMIT_FILE_SIZE") {
@@ -57,9 +49,6 @@ app.use((err, req, res, next) => {
     message: err.message || "Internal Server Error",
   });
 });
-
-
-
 
 connectDB().then(() => {
   app.listen(PORT, () => {

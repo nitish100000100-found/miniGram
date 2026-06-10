@@ -40,6 +40,7 @@ function LookFor() {
   const handleComment = (post) => console.log("Comment:", post);
   const handleShare = (post) => console.log("Share:", post);
   const handleSave = (id) => console.log("Save:", id);
+  const [showCommonUsers, setShowCommonUsers] = useState(false);
 
   useEffect(() => {
     const getProfile = async () => {
@@ -136,15 +137,14 @@ function LookFor() {
     return <div className={styles.loading}>Loading...</div>;
   }
 
-if (notFound || !user) {
-  return (
-    <div className={styles.notFound}>
-      <MdOutlinePersonOff />
-      <h3>User Not Found or Some Server Error</h3>
-     
-    </div>
-  );
-}
+  if (notFound || !user) {
+    return (
+      <div className={styles.notFound}>
+        <MdOutlinePersonOff />
+        <h3>User Not Found or Some Server Error</h3>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.page}>
@@ -230,6 +230,55 @@ if (notFound || !user) {
               </button>
             )}
           </div>
+          {user.commonUsers?.length > 0 && (
+            <div className={styles.commonUsers}>
+              <p>
+                Followed by{" "}
+                <strong>
+                  {user.commonUsers
+                    .slice(0, 3)
+                    .map((u) => u.username)
+                    .join(", ")}
+                </strong>
+                <button
+                  type="button"
+                  onClick={() => setShowCommonUsers((prev) => !prev)}
+                >
+                  {showCommonUsers
+                    ? " show less"
+                    : user.commonUsers.length > 3
+                      ? ` and ${user.commonUsers.length - 3} others`
+                      : " view all"}
+                </button>
+              </p>
+
+              {showCommonUsers && (
+                <div className={styles.commonUsersList}>
+                  {user.commonUsers.map((u) => (
+                    <Link
+                      key={u._id}
+                      to={`/lookFor/${u._id}`}
+                      className={styles.commonUserLink}
+                    >
+                      <img
+                        src={u.profilePicture || "/insta.webp"}
+                        alt={u.username}
+                        className={styles.smallAvatar}
+                      />
+
+                      <div className={styles.commonUserInfo}>
+                        <div className={styles.commonUserName}>{u.name}</div>
+
+                        <div className={styles.commonUserUsername}>
+                          @{u.username}
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className={styles.infoGrid}>
             <div className={styles.infoCard}>

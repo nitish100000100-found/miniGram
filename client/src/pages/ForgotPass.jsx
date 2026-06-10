@@ -28,9 +28,6 @@ const ForgotPassword = () => {
     return () => clearInterval(interval);
   }, [resendTimer]);
 
-
-  
-
   const emailRef = useRef(null);
   const savedEmailRef = useRef("");
   const savedOtpRef = useRef("");
@@ -125,67 +122,64 @@ const ForgotPassword = () => {
     }
   };
 
-const resetPasswordHandler = async () => {
-  try {
-    
-    const otp = savedOtpRef.current;
-    const newPassword = newPasswordRef.current.value;
-    const confirmPassword = confirmPasswordRef.current.value;
-    
-    
+  const resetPasswordHandler = async () => {
+    try {
+      const otp = savedOtpRef.current;
+      const newPassword = newPasswordRef.current.value;
+      const confirmPassword = confirmPasswordRef.current.value;
 
-    if (!otp) {
-      return showNotification("OTP is required", "error");
-    }
+      if (!otp) {
+        return showNotification("OTP is required", "error");
+      }
 
-    if (newPassword.length < 6) {
-      return showNotification(
-        "Password must be at least 6 characters",
+      if (newPassword.length < 6) {
+        return showNotification(
+          "Password must be at least 6 characters",
+          "error",
+        );
+      }
+
+      if (newPassword !== confirmPassword) {
+        return showNotification("Passwords do not match", "error");
+      }
+
+      setLoading(true);
+
+      const res = await axios.post(
+        `${API_URL}/api/auth/forgot-password`,
+        {
+          email: savedEmailRef.current,
+          otp,
+          newPassword,
+        },
+        {
+          withCredentials: true,
+        },
+      );
+
+      showNotification(res.data.message, "success");
+
+      savedEmailRef.current = "";
+
+      if (emailRef.current) emailRef.current.value = "";
+      if (otpRef.current) otpRef.current.value = "";
+      if (newPasswordRef.current) newPasswordRef.current.value = "";
+      if (confirmPasswordRef.current) confirmPasswordRef.current.value = "";
+      savedEmailRef.current = "";
+
+      navigate("/");
+    } catch (error) {
+      showNotification(
+        error.response?.data?.message || "Something went wrong",
         "error",
       );
+    } finally {
+      setLoading(false);
     }
-
-    if (newPassword !== confirmPassword) {
-      return showNotification("Passwords do not match", "error");
-    }
-
-    setLoading(true);
-   
-    
-
-    const res = await axios.post(`${API_URL}/api/auth/forgot-password`, {
-      email: savedEmailRef.current,
-      otp,
-      newPassword,
-    });
-
-    showNotification(res.data.message, "success");
-
-    savedEmailRef.current = "";
-
-    if (emailRef.current) emailRef.current.value = "";
-    if (otpRef.current) otpRef.current.value = "";
-    if (newPasswordRef.current) newPasswordRef.current.value = "";
-    if (confirmPasswordRef.current) confirmPasswordRef.current.value = "";
-    savedEmailRef.current = "";
-    
-
-    navigate("/signin");
-  } catch (error) {
-
-    showNotification(
-      error.response?.data?.message || "Something went wrong",
-      "error",
-    );
-  } finally {
-    setLoading(false);
-  }
-};
+  };
   const resendOtpHandler = async () => {
-    
-   
     if (resendTimer > 0) return;
-    
+
     try {
       setResendingOtp(true);
 

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import styles from "./ProfileCard.module.css";
 
 const API_URL = import.meta.env.VITE_API_URL;
+import { Link } from "react-router-dom";
 
 function ProfileCard() {
   const [user, setUser] = useState(null);
@@ -49,7 +50,8 @@ function ProfileCard() {
   }
 
   return (
-  <div className={styles.profileCard}>
+<div className={styles.profileCard}>
+  <Link to="/myInfo" className={styles.profileLink}>
     <img
       src={user.profilePicture || "/insta.webp"}
       alt={user.name}
@@ -60,14 +62,15 @@ function ProfileCard() {
       <h3>{user.name}</h3>
       <p>@{user.username}</p>
     </div>
+  </Link>
 
-    <button
-      onClick={handleLogout}
-      className={styles.logoutBtn}
-    >
-      Logout
-    </button>
-  </div>
+  <button
+    onClick={handleLogout}
+    className={styles.logoutBtn}
+  >
+    Logout
+  </button>
+</div>
 );
 }
 

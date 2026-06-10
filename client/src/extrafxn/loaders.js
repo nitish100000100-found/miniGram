@@ -13,10 +13,12 @@ export const protectedLoader = async () => {
         withCredentials: true,
       }
     );
+    
 
 
     return null;
   } catch (error) {
+      
     console.error("Error in protectedLoader:", error);
     return redirect("/signin");
   }

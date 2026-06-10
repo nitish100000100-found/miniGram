@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import path from "path";
 import { uploadToCloudinary, cloudinary } from "../config/cloudinary.js";
 import Post from "../models/post.model.js";
+
 const getCurrentUser = async (req, res) => {
   try {
     const userId = req.userId;
@@ -22,22 +23,50 @@ const getCurrentUser = async (req, res) => {
 
 const suggestedUsers = async (req, res) => {
   try {
+    const currentUser = await User.findById(req.userId).select(
+      "following sendRequest blockedUsers",
+    );
+
+    const blockedBy = (
+      await User.find({
+        blockedUsers: req.userId,
+      }).select("_id")
+    ).map((user) => user._id);
+
+    const excludedUsers = [
+      new mongoose.Types.ObjectId(req.userId),
+      ...currentUser.following,
+      ...currentUser.sendRequest,
+      ...currentUser.blockedUsers,
+      ...blockedBy,
+    ];
+
     const users = await User.aggregate([
       {
         $match: {
-          _id: { $ne: new mongoose.Types.ObjectId(req.userId) },
+          _id: {
+            $nin: excludedUsers,
+          },
         },
       },
       {
         $sample: { size: 20 },
       },
+      {
+        $project: {
+          name: 1,
+          username: 1,
+          profilePicture: 1,
+          bio: 1,
+        },
+      },
     ]);
 
     return res.status(200).json({ users });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: `Internal Server Error: ${error.message}` });
+    return res.status(500).json({
+      message: `Internal Server Error: ${error.message}`,
+    });
   }
 };
 
@@ -136,8 +165,14 @@ const lookFor = async (req, res) => {
       });
     }
 
+    if (req.userId === id) {
+      return res.status(400).json({
+        message: "You cannot look up your own profile from this API",
+      });
+    }
+
     const profileUser = await User.findById(id)
-      .select("-password")
+      .select("-password -savedPosts -likedPosts -sendRequest -receivedRequest")
       .populate("posts");
 
     if (!profileUser) {
@@ -146,31 +181,57 @@ const lookFor = async (req, res) => {
       });
     }
 
-    const currentUserId = req.userId;
-
-    const isFollowing = profileUser.followers.some(
-      (followerId) => followerId.toString() === currentUserId,
+    const currentUser = await User.findById(req.userId).select(
+      "blockedUsers following",
     );
 
-    if (profileUser.isPrivate && !isFollowing) {
-      const userData = profileUser.toObject();
+    const isBlocked =
+      currentUser.blockedUsers.some(
+        (userId) => userId.toString() === profileUser._id.toString(),
+      ) ||
+      profileUser.blockedUsers.some(
+        (userId) => userId.toString() === currentUser._id.toString(),
+      );
 
+    if (isBlocked) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    const commonFollowers = profileUser.followers.filter((followerId) =>
+      currentUser.following.some(
+        (followingId) => followingId.toString() === followerId.toString(),
+      ),
+    );
+
+    const commonUsers = await User.find({
+      _id: { $in: commonFollowers },
+    }).select("_id username profilePicture name");
+
+    const isFollowing = profileUser.followers.some(
+      (followerId) => followerId.toString() === req.userId,
+    );
+
+    const userData = profileUser.toObject();
+
+    delete userData.blockedUsers;
+
+    userData.commonUsers = commonUsers;
+
+    if (profileUser.isPrivate && !isFollowing) {
       userData.followersLength = profileUser.followers.length;
       userData.followingLength = profileUser.following.length;
 
       userData.posts = [];
       userData.followers = [];
       userData.following = [];
-      userData.savedPosts = [];
-      userData.likedPosts = [];
-      userData.sendRequest = [];
-      userData.receivedRequest = [];
       userData.highlights = [];
 
       return res.status(200).json(userData);
     }
 
-    return res.status(200).json(profileUser);
+    return res.status(200).json(userData);
   } catch (error) {
     return res.status(500).json({
       message: error.message,
