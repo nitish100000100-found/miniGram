@@ -177,6 +177,7 @@ const Signup = () => {
           username,
           email,
           password,
+          otp
         },
         {
           withCredentials: true,

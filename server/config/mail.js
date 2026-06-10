@@ -39,7 +39,7 @@ const sendEmail = async (to) => {
         <h2>miniGram Email Verification</h2>
         <p>Your OTP is:</p>
         <h1>${otp}</h1>
-        <p>This OTP will expire in <strong>10 minutes</strong>.</p>
+        <p>This OTP will expire in <strong>5 minutes</strong>.</p>
         <p>Do not share this code with anyone.</p>
       `,
     });

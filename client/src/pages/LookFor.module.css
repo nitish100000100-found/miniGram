@@ -275,13 +275,32 @@
   font-weight: 600;
 }
 
+
 .notFound {
-  min-height: 100vh;
+  width: 100%;
+  height: 100vh;
+  
+
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
 
-  color: #ff6b6b;
+  color: white;
+  background-color: #0f0f16;
+}
+
+.notFound svg {
+  font-size: 4rem;
+  color: #a855f7;
+  margin-bottom: 1rem;
+}
+
+.notFound h3 {
   font-size: 1.8rem;
-  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.notFound p {
+  color: #bdbdbd;
 }

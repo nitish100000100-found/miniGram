@@ -130,6 +130,12 @@ const lookFor = async (req, res) => {
   try {
     const { id } = req.params;
 
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
     const profileUser = await User.findById(id)
       .select("-password")
       .populate("posts");
@@ -143,7 +149,7 @@ const lookFor = async (req, res) => {
     const currentUserId = req.userId;
 
     const isFollowing = profileUser.followers.some(
-      (followerId) => followerId.toString() === currentUserId
+      (followerId) => followerId.toString() === currentUserId,
     );
 
     if (profileUser.isPrivate && !isFollowing) {
@@ -166,11 +172,10 @@ const lookFor = async (req, res) => {
 
     return res.status(200).json(profileUser);
   } catch (error) {
-   
     return res.status(500).json({
       message: error.message,
     });
   }
 };
 
-export { getCurrentUser, suggestedUsers, editProfile, lookFor};
+export { getCurrentUser, suggestedUsers, editProfile, lookFor };

@@ -1,6 +1,7 @@
 import axios from "axios";
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
+
 import {
   FaUser,
   FaBriefcase,
@@ -8,6 +9,8 @@ import {
   FaInfoCircle,
   FaLock,
 } from "react-icons/fa";
+import { MdOutlinePersonOff } from "react-icons/md";
+
 import styles from "./LookFor.module.css";
 import {
   FaHeart,
@@ -22,6 +25,8 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 function LookFor() {
   const { id } = useParams();
+
+  const navigate = useNavigate();
 
   const [user, setUser] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
@@ -54,9 +59,15 @@ function LookFor() {
         setCurrentUser(currentRes.data);
       } catch (error) {
         console.error(error);
-        console.log("yaha pe")
+
+        if (error.response?.data?.message === "User not found") {
           setnotFound(true);
-        
+        }
+        if (
+          error.response?.data?.message === "Unauthorized: No token provided !"
+        ) {
+          navigate("/signin");
+        }
       } finally {
         setLoading(false);
       }
@@ -65,13 +76,13 @@ function LookFor() {
     getProfile();
   }, [id]);
 
-const isFollowing = currentUser?.following?.some(
-  (id) => id.toString() === user?._id?.toString(),
-);
+  const isFollowing = currentUser?.following?.some(
+    (id) => id.toString() === user?._id?.toString(),
+  );
 
-const requestSent = currentUser?.sendRequest?.some(
-  (id) => id.toString() === user?._id?.toString(),
-);
+  const requestSent = currentUser?.sendRequest?.some(
+    (id) => id.toString() === user?._id?.toString(),
+  );
   const canViewProfile =
     !user?.isPrivate ||
     isFollowing ||
@@ -121,12 +132,18 @@ const requestSent = currentUser?.sendRequest?.some(
     }
   };
 
-if (loading) {
-  return <div className={styles.loading}>Loading...</div>;
-}
+  if (loading) {
+    return <div className={styles.loading}>Loading...</div>;
+  }
 
 if (notFound || !user) {
-  return <div className={styles.notFound}>User Not Found</div>;
+  return (
+    <div className={styles.notFound}>
+      <MdOutlinePersonOff />
+      <h3>User Not Found or Some Server Error</h3>
+     
+    </div>
+  );
 }
 
   return (

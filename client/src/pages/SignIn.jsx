@@ -124,9 +124,7 @@ const SignIn = () => {
           <span>OR</span>
         </div>
 
-        <button type="button" className={styles.googleBtn}>
-          Continue with Google
-        </button>
+       
 
         <p className={styles.footer}>
           Don't have an account?{" "}
