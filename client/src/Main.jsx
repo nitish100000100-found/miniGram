@@ -1,5 +1,5 @@
-
 import { createRoot } from 'react-dom/client'
+import "./index.css";
 
 
 import { protectedLoader } from './extrafxn/loaders.js';
@@ -13,6 +13,7 @@ import HomePage from './pages/HomePage.jsx';
 import LookFor from './pages/LookFor.jsx';
 import NotFound from "./pages/NotFound.jsx"
 import MyInfo from './pages/MyInfo.jsx';
+import EditProfile from './pages/EditProfile.jsx';
 
 const router = createBrowserRouter([
   { path: "/", element: <HomePage /> , loader: protectedLoader},
@@ -31,13 +32,20 @@ const router = createBrowserRouter([
   {
     path: "/lookFor/:id",
     element: <LookFor/>,
+    loader: protectedLoader
   },
   {
     path:"/myInfo",
-    element:<MyInfo/>
+    element:<MyInfo/>,
+    loader: protectedLoader
+  },
+  {
+    path:"/editProfile",
+    element:<EditProfile/>,
+    loader: protectedLoader
   },
 
-  { path: "*", element: <NotFound/>},
+  { path: "*", element: <NotFound/>, loader: protectedLoader},
 ]);
 
 

@@ -19,6 +19,11 @@ const HighlightSchema = new mongoose.Schema(
       default: "",
     },
 
+    coverImagePublicId: {
+      type: String,
+      default: "",
+    },
+
     stories: [
       {
         mediaType: {
@@ -32,10 +37,10 @@ const HighlightSchema = new mongoose.Schema(
           required: true,
         },
 
-        createdAt: {
-          type: Date,
+        publicId: {
+          type: String,
           required: true,
-        },
+        }
       },
     ],
   },

@@ -116,6 +116,18 @@ const UserSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
+    stories:[
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Story",
+      }
+    ],
+    loops:[
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Loop",
+      }
+    ]
   },
   {
     timestamps: true,

@@ -10,10 +10,10 @@ function DesktopLayout() {
       <LeftSideBar />
       <div className={styles.feedSection}>
         <Feed />
-        <BottomNav />
-      </div> 
-     
+      </div>
+
       <MessagesSideBar />
+      <BottomNav />
     </div>
   );
 }

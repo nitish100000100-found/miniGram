@@ -6,6 +6,10 @@ dotenv.config();
 import connectDB from "./config/db.js";
 import authRouter from "./routes/auth.route.js";
 import userRouter from "./routes/user.route.js";
+import postRouter from "./routes/post.route.js";
+import interactionRouter from "./routes/interaction.route.js";
+import loopRouter from "./routes/loop.route.js";
+import storyRouter from "./routes/story.route.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -28,6 +32,10 @@ app.get("/", (req, res, next) => {
 
 app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
+app.use("/api/post", postRouter);
+app.use("/api/interaction", interactionRouter);
+app.use("/api/loop", loopRouter);
+app.use("/api/story", storyRouter);
 
 app.use((err, req, res, next) => {
   if (err.code === "LIMIT_FILE_SIZE") {

@@ -1,18 +1,30 @@
 .desktopLayout {
   display: grid;
-
-  grid-template-columns:
-    minmax(280px, 22%)
-    minmax(500px, 1fr)
-    minmax(350px, 28%);
-
+  grid-template-columns: 280px 1fr 340px;
+  max-width: 1440px;
+  margin: 0 auto;
   min-height: 100vh;
-  gap: 20px;
-  padding: 20px;
+  gap: 32px;
+  padding: 0 24px;
+  width: 100%;
 }
 
 .feedSection {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
+  padding: 24px 0;
+  min-width: 0; /* Prevents flex children from stretching layout */
+}
+
+/* Responsive breakpoint: collapse Messages Sidebar on smaller desktop views */
+@media (max-width: 1200px) {
+  .desktopLayout {
+    grid-template-columns: 260px 1fr;
+    gap: 24px;
+  }
+
+  .desktopLayout > *:nth-child(3) {
+    display: none;
+  }
 }

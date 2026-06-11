@@ -13,6 +13,9 @@ import {
   FaShare,
   FaBookmark,
   FaRegBookmark,
+  FaUserEdit,
+  FaCog,
+  FaPlus,
 } from "react-icons/fa";
 
 import styles from "./MyInfo.module.css";
@@ -25,10 +28,10 @@ function MyInfo() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const handleLike = (id) => console.log("Like:", id);
+  const handleLike = (id,isLiked) => console.log("Like:", id,isLiked);
   const handleComment = (post) => console.log("Comment:", post);
   const handleShare = (post) => console.log("Share:", post);
-  const handleSave = (id) => console.log("Save:", id);
+  const handleSave = (id,isSaved) => console.log("Save:", id,isSaved);
 
   useEffect(() => {
     const getCurrentUser = async () => {
@@ -71,18 +74,37 @@ function MyInfo() {
           <h1>MiniGram</h1>
         </Link>
 
-        <Link to="/" className={styles.backBtn}>
-          ← Back
-        </Link>
+        <div className={styles.topBarRight}>
+          <Link to="/" className={styles.backBtn}>
+            ← Back
+          </Link>
+          <button
+            type="button"
+            className={styles.settingsLinkBtn}
+            onClick={() => navigate("/settings")}
+          >
+            <FaCog /> Settings
+          </button>
+        </div>
       </div>
-
       <div className={styles.profileCard}>
         <div className={styles.left}>
-          <img
-            src={user.profilePicture || "/insta.webp"}
-            alt={user.name}
-            className={styles.avatar}
-          />
+          <div className={styles.avatarContainer}>
+            <img
+              src={user.profilePicture || "/insta.webp"}
+              alt={user.name}
+              className={styles.avatar}
+            />
+            <div className={styles.actionLinks}>
+              <button
+                type="button"
+                className={styles.profileLinkBtn}
+                onClick={() => navigate("/editProfile")}
+              >
+                <FaUserEdit /> Edit Profile
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className={styles.right}>
@@ -129,6 +151,33 @@ function MyInfo() {
         </div>
       </div>
 
+      {/* HIGHLIGHTS */}
+      <div className={styles.highlightsSection}>
+        <div className={styles.highlightsList}>
+          {/* Add New Highlight Button */}
+          <div className={styles.addHighlightItem}>
+            <div className={styles.addHighlightRing}>
+              <FaPlus size={20} />
+            </div>
+            <span className={styles.highlightTitle}>New</span>
+          </div>
+
+          {/* Render existing highlights */}
+          {user.highlights && user.highlights.map((highlight) => (
+            <div key={highlight._id} className={styles.highlightItem}>
+              <div className={styles.highlightRing}>
+                <img
+                  src={highlight.coverImage || "/insta.webp"}
+                  alt={highlight.title}
+                  className={styles.highlightImage}
+                />
+              </div>
+              <span className={styles.highlightTitle}>{highlight.title}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div className={styles.postsSection}>
         <h3>Posts</h3>
 
@@ -165,7 +214,7 @@ function MyInfo() {
                   )}
 
                   <div className={styles.overlay}>
-                    <button onClick={() => handleLike(post._id)}>
+                    <button onClick={() => handleLike(post._id,isLiked)}>
                       {isLiked ? <FaHeart /> : <FaRegHeart />}
                       <span>{post.likes?.length || 0}</span>
                     </button>
@@ -179,7 +228,7 @@ function MyInfo() {
                       <FaShare />
                     </button>
 
-                    <button onClick={() => handleSave(post._id)}>
+                    <button onClick={() => handleSave(post._id,isSaved)}>
                       {isSaved ? <FaBookmark /> : <FaRegBookmark />}
                     </button>
                   </div>

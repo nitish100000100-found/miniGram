@@ -36,10 +36,10 @@ function LookFor() {
   //current user is me
   // user is the one i'm looking for
 
-  const handleLike = (id) => console.log("Like:", id);
+  const handleLike = (id,isLiked) => console.log("Like:", id,isLiked);
   const handleComment = (post) => console.log("Comment:", post);
   const handleShare = (post) => console.log("Share:", post);
-  const handleSave = (id) => console.log("Save:", id);
+  const handleSave = (id,isSaved) => console.log("Save:", id,isSaved);
   const [showCommonUsers, setShowCommonUsers] = useState(false);
 
   useEffect(() => {
@@ -238,27 +238,33 @@ function LookFor() {
             <div className={styles.commonUsers}>
               <p>
                 Followed by{" "}
-                <strong>
-                  {user.commonUsers
-                    .slice(0, 3)
-                    .map((u) => u.username)
-                    .join(", ")}
-                </strong>
-                <button
-                  type="button"
-                  onClick={() => setShowCommonUsers((prev) => !prev)}
-                >
-                  {showCommonUsers
-                    ? " show less"
-                    : user.commonUsers.length > 3
-                      ? ` and ${user.commonUsers.length - 3} others`
-                      : " view all"}
-                </button>
+                {user.commonUsers.slice(0, 3).map((u, idx) => (
+                  <span key={u._id}>
+                    <Link
+                      to={`/lookFor/${u._id}`}
+                      className={styles.inlineUserLink}
+                    >
+                      <strong>{u.username}</strong>
+                    </Link>
+
+                    {idx < 2 ? ", " : ""}
+                  </span>
+                ))}
+                {user.commonUsers.length > 3 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowCommonUsers((prev) => !prev)}
+                  >
+                    {showCommonUsers
+                      ? " show less"
+                      : ` and ${user.commonUsers.length - 3} others`}
+                  </button>
+                )}
               </p>
 
-              {showCommonUsers && (
+              {showCommonUsers && user.commonUsers.length > 3 && (
                 <div className={styles.commonUsersList}>
-                  {user.commonUsers.map((u) => (
+                  {user.commonUsers.slice(3).map((u) => (
                     <Link
                       key={u._id}
                       to={`/lookFor/${u._id}`}
@@ -308,6 +314,26 @@ function LookFor() {
         </div>
       </div>
 
+      {/* HIGHLIGHTS */}
+      {canViewProfile && user.highlights && user.highlights.length > 0 && (
+        <div className={styles.highlightsSection}>
+          <div className={styles.highlightsList}>
+            {user.highlights.map((highlight) => (
+              <div key={highlight._id} className={styles.highlightItem}>
+                <div className={styles.highlightRing}>
+                  <img
+                    src={highlight.coverImage || "/insta.webp"}
+                    alt={highlight.title}
+                    className={styles.highlightImage}
+                  />
+                </div>
+                <span className={styles.highlightTitle}>{highlight.title}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* POSTS */}
       <div className={styles.postsSection}>
         <h3>Posts</h3>
@@ -346,7 +372,7 @@ function LookFor() {
                     )}
 
                     <div className={styles.overlay}>
-                      <button onClick={() => handleLike(post._id)}>
+                      <button onClick={() => handleLike(post._id,isLiked)}>
                         {isLiked ? <FaHeart /> : <FaRegHeart />}
                         <span>{post.likes?.length || 0}</span>
                       </button>
@@ -360,7 +386,7 @@ function LookFor() {
                         <FaShare />
                       </button>
 
-                      <button onClick={() => handleSave(post._id)}>
+                      <button onClick={() => handleSave(post._id,isSaved)}>
                         {isSaved ? <FaBookmark /> : <FaRegBookmark />}
                       </button>
                     </div>

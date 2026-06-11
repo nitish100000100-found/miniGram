@@ -1,21 +1,21 @@
 .topBar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+
   display: flex;
   justify-content: space-between;
   align-items: center;
-
-  padding: 15px;
-  border-bottom: 1px solid #ddd;
-}
-
-.right {
-  display: flex;
-  gap: 15px;
-}
-.topBar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 16px;
+  padding: 14px 20px;
+  
+  background: rgba(12, 7, 32, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  
+  border-bottom: 1px solid rgba(139, 92, 246, 0.15);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
 .brand {
@@ -25,14 +25,40 @@
 }
 
 .brand img {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
 }
 
 .brand h2 {
   margin: 0;
   font-size: 1.2rem;
-  font-weight: 700;
-  color: #8b5cf6;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  background: linear-gradient(
+    135deg,
+    #c084fc,
+    #a855f7
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.right svg {
+  color: #a78bfa;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.right svg:hover {
+  color: #ffffff;
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 6px rgba(167, 139, 250, 0.5));
 }

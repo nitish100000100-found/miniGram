@@ -70,6 +70,9 @@ const signUp = async (req, res) => {
     await OTP.deleteOne({ email });
 
     const token = await genToken(newUser._id);
+    if(!token){
+      return res.status(500).json({message: "Internal server error while generating token"})
+    }
     res.cookie("token", token, {
       httpOnly: true,
       secure: true,
@@ -102,6 +105,9 @@ const signIn = async (req, res) => {
     }
 
     const token = await genToken(user._id);
+    if(!token){
+      return res.status(500).json({message: "Internal server error while generating token"})
+    }
     res.cookie("token", token, {
       httpOnly: true,
       secure: true,
@@ -293,7 +299,9 @@ const forgotPassword = async (req, res) => {
     await OTP.deleteOne({ email });
 
     const token = await genToken(user._id);
-    
+    if (!token) {
+      return res.status(500).json({ message: "Internal server error while generating token" });
+    }
 
     res.cookie("token", token, {
       httpOnly: true,

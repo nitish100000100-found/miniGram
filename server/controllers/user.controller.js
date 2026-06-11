@@ -2,13 +2,15 @@ import User from "../models/user.model.js";
 import mongoose from "mongoose";
 import path from "path";
 import { uploadToCloudinary, cloudinary } from "../config/cloudinary.js";
-import Post from "../models/post.model.js";
-
+import Post from "../models/post.model.js"
+import Highlight from "../models/highlight.model.js"
+import Story from "../models/story.model.js"
+  
 const getCurrentUser = async (req, res) => {
   try {
     const userId = req.userId;
 
-    const user = await User.findById(userId).select("-password");
+    const user = await User.findById(userId).select("-password").populate("posts highlights stories");
     if (!user) {
       return res.status(404).json({ message: "User not found !" });
     }
@@ -101,6 +103,7 @@ const editProfile = async (req, res, next) => {
     }
 
     const oldPublicId = user.public_id;
+    let shouldDeleteOldPic = false;
 
     if (req.file) {
       const originalName = path.parse(req.file.originalname).name;
@@ -121,6 +124,11 @@ const editProfile = async (req, res, next) => {
 
       user.profilePicture = result.secure_url;
       user.public_id = result.public_id;
+      shouldDeleteOldPic = oldPublicId;
+    } else if (req.body.removeProfilePic === "true") {
+      user.profilePicture = "";
+      user.public_id = "";
+      shouldDeleteOldPic = oldPublicId;
     }
 
     if (name !== undefined) user.name = name;
@@ -131,7 +139,7 @@ const editProfile = async (req, res, next) => {
 
     await user.save();
 
-    if (req.file && oldPublicId) {
+    if (shouldDeleteOldPic && oldPublicId) {
       try {
         await cloudinary.uploader.destroy(oldPublicId);
       } catch (err) {
@@ -150,8 +158,9 @@ const editProfile = async (req, res, next) => {
         console.error("Failed to rollback cloudinary upload:", err.message);
       }
     }
-
-    next(error);
+    return res.status(500).json({
+      message: `Internal Server Error: ${error.message}`,
+    });
   }
 };
 
@@ -173,7 +182,7 @@ const lookFor = async (req, res) => {
 
     const profileUser = await User.findById(id)
       .select("-password -savedPosts -likedPosts -sendRequest -receivedRequest")
-      .populate("posts");
+      .populate("posts highlights");
 
     if (!profileUser) {
       return res.status(404).json({
