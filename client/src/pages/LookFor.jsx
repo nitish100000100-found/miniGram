@@ -1,0 +1,410 @@
+import axios from "axios";
+import { useState, useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+
+import {
+  FaUser,
+  FaBriefcase,
+  FaVenusMars,
+  FaInfoCircle,
+  FaLock,
+} from "react-icons/fa";
+import { MdOutlinePersonOff } from "react-icons/md";
+
+import styles from "./LookFor.module.css";
+import {
+  FaHeart,
+  FaRegHeart,
+  FaComment,
+  FaShare,
+  FaBookmark,
+  FaRegBookmark,
+} from "react-icons/fa";
+
+const API_URL = import.meta.env.VITE_API_URL;
+
+function LookFor() {
+  const { id } = useParams();
+
+  const navigate = useNavigate();
+
+  const [user, setUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setnotFound] = useState(false);
+
+  //current user is me
+  // user is the one i'm looking for
+
+  const handleLike = (id,isLiked) => console.log("Like:", id,isLiked);
+  const handleComment = (post) => console.log("Comment:", post);
+  const handleShare = (post) => console.log("Share:", post);
+  const handleSave = (id,isSaved) => console.log("Save:", id,isSaved);
+  const [showCommonUsers, setShowCommonUsers] = useState(false);
+
+  useEffect(() => {
+    const getProfile = async () => {
+      try {
+        const profileRes = await axios.get(
+          `${API_URL}/api/user/lookFor/${id}`,
+          {
+            withCredentials: true,
+          },
+        );
+
+        const currentRes = await axios.get(`${API_URL}/api/user/current`, {
+          withCredentials: true,
+        });
+
+        setUser(profileRes.data);
+        setCurrentUser(currentRes.data);
+      } catch (error) {
+        console.error(error);
+
+        if (error.response?.data?.message === "User not found") {
+          setnotFound(true);
+        }
+        if (
+          error.response?.data?.message === "Unauthorized: No token provided !"
+        ) {
+          navigate("/signin");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getProfile();
+  }, [id]);
+
+  const isFollowing = currentUser?.following?.some(
+    (id) => id.toString() === user?._id?.toString(),
+  );
+
+  const requestSent = currentUser?.sendRequest?.some(
+    (id) => id.toString() === user?._id?.toString(),
+  );
+  const canViewProfile =
+    !user?.isPrivate ||
+    isFollowing ||
+    currentUser?._id?.toString() === user?._id?.toString();
+
+  const sendRequest = async () => {
+    try {
+      await axios.post(
+        `${API_URL}/api/user/send-request/${user._id}`,
+        {
+          fromUserId: currentUser._id,
+        },
+        {
+          withCredentials: true,
+        },
+      );
+
+      setCurrentUser((prev) => ({
+        ...prev,
+        sendRequest: [...(prev.sendRequest || []), user._id],
+      }));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const cancelRequest = async () => {
+    try {
+      await axios.post(
+        `${API_URL}/api/user/cancel-request/${user._id}`,
+        {
+          fromUserId: currentUser._id,
+        },
+        {
+          withCredentials: true,
+        },
+      );
+
+      setCurrentUser((prev) => ({
+        ...prev,
+        sendRequest: prev.sendRequest.filter(
+          (requestId) => requestId !== user._id,
+        ),
+      }));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  if (loading) {
+    return <div className={styles.loading}>Loading...</div>;
+  }
+
+  if (notFound || !user) {
+    return (
+      <div className={styles.notFound}>
+        <MdOutlinePersonOff />
+        <h3>User Not Found or Some Server Error</h3>
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.page}>
+      {/* TOP BAR */}
+      <div className={styles.topBar}>
+        <Link to="/" className={styles.logo}>
+          <img src="/favicon-v2.svg" alt="miniGram" />
+          <h1>MiniGram</h1>
+        </Link>
+
+        <Link to="/" className={styles.backBtn}>
+          ← Back
+        </Link>
+      </div>
+
+      {/* PROFILE */}
+      <div className={styles.profileCard}>
+        <div className={styles.left}>
+          <img
+            src={user.profilePicture || "/insta.webp"}
+            alt={user.name}
+            className={styles.avatar}
+          />
+        </div>
+
+        <div className={styles.right}>
+          <h2>@{user.username || "unknown_user"}</h2>
+
+          <div className={styles.stats}>
+            <div>
+              <strong>{user.posts?.length || 0}</strong>
+              <span>Posts</span>
+            </div>
+
+            <div>
+              {canViewProfile ? (
+                <Link to={`/lookfollowers/${user._id}`}>
+                  <strong>
+                    {user.followersLength ?? user.followers?.length ?? 0}
+                  </strong>
+                  <span>Followers</span>
+                </Link>
+              ) : (
+                <>
+                  <strong>
+                    {user.followersLength ?? user.followers?.length ?? 0}
+                  </strong>
+                  <span>Followers</span>
+                </>
+              )}
+            </div>
+
+            <div>
+              {canViewProfile ? (
+                <Link to={`/lookfollowing/${user._id}`}>
+                  <strong>
+                    {user.followingLength ?? user.following?.length ?? 0}
+                  </strong>
+                  <span>Following</span>
+                </Link>
+              ) : (
+                <>
+                  <strong>
+                    {user.followingLength ?? user.following?.length ?? 0}
+                  </strong>
+                  <span>Following</span>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* FOLLOW BUTTONS */}
+          <div className={styles.actions}>
+            {isFollowing ? (
+              <button className={styles.followingBtn}>Following</button>
+            ) : requestSent ? (
+              <button className={styles.cancelBtn} onClick={cancelRequest}>
+                Cancel Request
+              </button>
+            ) : (
+              <button className={styles.followBtn} onClick={sendRequest}>
+                Follow
+              </button>
+            )}
+
+            {canViewProfile && (
+              <button className={styles.messageBtn}>Message</button>
+            )}
+          </div>
+          {user.commonUsers?.length > 0 && (
+            <div className={styles.commonUsers}>
+              <p>
+                Followed by{" "}
+                {user.commonUsers.slice(0, 3).map((u, idx) => (
+                  <span key={u._id}>
+                    <Link
+                      to={`/lookFor/${u._id}`}
+                      className={styles.inlineUserLink}
+                    >
+                      <strong>{u.username}</strong>
+                    </Link>
+
+                    {idx < 2 ? ", " : ""}
+                  </span>
+                ))}
+                {user.commonUsers.length > 3 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowCommonUsers((prev) => !prev)}
+                  >
+                    {showCommonUsers
+                      ? " show less"
+                      : ` and ${user.commonUsers.length - 3} others`}
+                  </button>
+                )}
+              </p>
+
+              {showCommonUsers && user.commonUsers.length > 3 && (
+                <div className={styles.commonUsersList}>
+                  {user.commonUsers.slice(3).map((u) => (
+                    <Link
+                      key={u._id}
+                      to={`/lookFor/${u._id}`}
+                      className={styles.commonUserLink}
+                    >
+                      <img
+                        src={u.profilePicture || "/insta.webp"}
+                        alt={u.username}
+                        className={styles.smallAvatar}
+                      />
+
+                      <div className={styles.commonUserInfo}>
+                        <div className={styles.commonUserName}>{u.name}</div>
+
+                        <div className={styles.commonUserUsername}>
+                          @{u.username}
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className={styles.infoGrid}>
+            <div className={styles.infoCard}>
+              <FaUser />
+              <span>{user.name || "Unknown User"}</span>
+            </div>
+
+            <div className={styles.infoCard}>
+              <FaBriefcase />
+              <span>{user.profession || "Profession not shared"}</span>
+            </div>
+
+            <div className={styles.infoCard}>
+              <FaVenusMars />
+              <span>{user.gender || "Gender not shared"}</span>
+            </div>
+
+            <div className={styles.infoCard}>
+              <FaInfoCircle />
+              <span>{user.bio || "No bio shared yet"}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* HIGHLIGHTS */}
+      {canViewProfile && user.highlights && user.highlights.length > 0 && (
+        <div className={styles.highlightsSection}>
+          <div className={styles.highlightsList}>
+            {user.highlights.map((highlight) => (
+              <div key={highlight._id} className={styles.highlightItem}>
+                <div className={styles.highlightRing}>
+                  <img
+                    src={highlight.coverImage || "/insta.webp"}
+                    alt={highlight.title}
+                    className={styles.highlightImage}
+                  />
+                </div>
+                <span className={styles.highlightTitle}>{highlight.title}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* POSTS */}
+      <div className={styles.postsSection}>
+        <h3>Posts</h3>
+
+        {canViewProfile ? (
+          user.posts?.length === 0 ? (
+            <div className={styles.emptyPosts}>
+              <h2>No Posts Yet</h2>
+              <p>This user hasn't shared anything yet.</p>
+            </div>
+          ) : (
+            <div className={styles.postsGrid}>
+              {user.posts.map((post) => {
+                const isLiked = currentUser?.likedPosts?.some(
+                  (id) => id.toString() === post._id.toString(),
+                );
+
+                const isSaved = currentUser?.savedPosts?.some(
+                  (id) => id.toString() === post._id.toString(),
+                );
+
+                return (
+                  <div key={post._id} className={styles.postCard}>
+                    {post.mediaType === "image" ? (
+                      <img
+                        src={post.mediaUrl}
+                        alt={post.caption || "Post"}
+                        className={styles.postImage}
+                      />
+                    ) : (
+                      <video
+                        src={post.mediaUrl}
+                        className={styles.postImage}
+                        muted
+                      />
+                    )}
+
+                    <div className={styles.overlay}>
+                      <button onClick={() => handleLike(post._id,isLiked)}>
+                        {isLiked ? <FaHeart /> : <FaRegHeart />}
+                        <span>{post.likes?.length || 0}</span>
+                      </button>
+
+                      <button onClick={() => handleComment(post)}>
+                        <FaComment />
+                        <span>{post.comments?.length || 0}</span>
+                      </button>
+
+                      <button onClick={() => handleShare(post)}>
+                        <FaShare />
+                      </button>
+
+                      <button onClick={() => handleSave(post._id,isSaved)}>
+                        {isSaved ? <FaBookmark /> : <FaRegBookmark />}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )
+        ) : (
+          <div className={styles.privateAccount}>
+            <FaLock />
+            <h2>Private Account</h2>
+            <p>Follow this account to see photos and videos.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default LookFor;

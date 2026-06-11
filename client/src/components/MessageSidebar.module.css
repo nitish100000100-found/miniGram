@@ -1,0 +1,58 @@
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  padding: 24px 16px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  background: linear-gradient(
+    180deg,
+    #0c0720 0%,
+    #140b32 50%,
+    #1a0d3f 100%
+  );
+
+  border-left: 1px solid rgba(139, 92, 246, 0.15);
+  overflow-y: auto;
+
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.sidebar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+
+.sidebar h3 {
+  margin: 0;
+  color: #c084fc;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  padding-left: 4px;
+}
+
+.search {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  color: #ffffff;
+  font-size: 13px;
+  outline: none;
+  transition: all 0.25s ease;
+}
+
+.search:focus {
+  border-color: rgba(168, 85, 247, 0.6);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.15);
+}
+
+.search::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}

@@ -1,0 +1,121 @@
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  padding: 24px 16px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+
+  background: linear-gradient(
+    180deg,
+    #0c0720 0%,
+    #140b32 50%,
+    #1a0d3f 100%
+  );
+
+  border-right: 1px solid rgba(139, 92, 246, 0.15);
+  overflow-y: auto;
+  
+  /* Hide scrollbar support */
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.sidebar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+
+/* =========================
+   TOP BAR
+========================= */
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 14px 16px;
+
+  border-radius: 20px;
+
+  background: rgba(255, 255, 255, 0.03);
+
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+
+  border: 1px solid rgba(255, 255, 255, 0.06);
+
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+/* =========================
+   BRAND
+========================= */
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.brand h2 {
+  margin: 0;
+
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+
+  background: linear-gradient(
+    135deg,
+    #c084fc,
+    #a855f7,
+    #e9d5ff
+  );
+
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* =========================
+   HEART BUTTON
+========================= */
+
+.heartBtn {
+  width: 40px;
+  height: 40px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  outline: none;
+
+  cursor: pointer;
+
+  background: transparent;
+
+  color: #c084fc;
+  font-size: 1.2rem;
+
+  transition: all 0.25s ease;
+  border-radius: 12px;
+}
+
+.heartBtn:hover {
+  transform: scale(1.08);
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+
+  text-shadow:
+    0 0 12px rgba(192, 132, 252, 0.9),
+    0 0 24px rgba(192, 132, 252, 0.5);
+}

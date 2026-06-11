@@ -1,0 +1,81 @@
+.storiesContainer {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  overflow-x: auto;
+  scrollbar-width: none; /* Hide scrollbars Firefox */
+  -ms-overflow-style: none; /* Hide scrollbars IE/Edge */
+  width: 100%;
+}
+
+.storiesContainer::-webkit-scrollbar {
+  display: none; /* Hide scrollbars Chrome/Safari */
+}
+
+.storyItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.avatarRing {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  padding: 2px;
+  background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.storyItem:hover .avatarRing {
+  transform: scale(1.05);
+}
+
+.userRing {
+  background: rgba(255, 255, 255, 0.15); /* Plain border for self story */
+}
+
+.avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #0c0720; /* Creates separation margin from background */
+}
+
+.plusIcon {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  background: #a855f7;
+  color: white;
+  border: 2px solid #0c0720;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.username {
+  font-size: 11px;
+  color: rgba(243, 232, 255, 0.7);
+  max-width: 64px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
