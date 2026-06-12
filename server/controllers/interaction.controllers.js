@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import User from "../models/user.model.js";
 import Post from "../models/post.model.js";
+import Story from "../models/story.model.js";
 
 const unblockUser = async (req, res) => {
   try {
@@ -380,10 +381,408 @@ const likePost = async (req, res) => {
   }
 };
 
+const sendFollowRequest = async (req, res) => {
+  let session = null;
+  try {
+    const targetUserId = req.params.id;
+    const userId = req.userId;
+
+    if (!targetUserId) {
+      return res.status(400).json({ message: "Target User ID is required" });
+    }
+
+    if (targetUserId.toString() === userId.toString()) {
+      return res.status(400).json({ message: "You cannot follow yourself" });
+    }
+
+    session = await mongoose.startSession();
+    session.startTransaction();
+
+    const me = await User.findById(userId).session(session);
+    const target = await User.findById(targetUserId).session(session);
+
+    if (!me || !target) {
+      await session.abortTransaction();
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check block list
+    const isBlocked =
+      me.blockedUsers.some((id) => id.toString() === targetUserId.toString()) ||
+      target.blockedUsers.some((id) => id.toString() === userId.toString());
+
+    if (isBlocked) {
+      await session.abortTransaction();
+      return res.status(403).json({ message: "Action not allowed" });
+    }
+
+    // Check if already following
+    const alreadyFollowing = me.following.some(
+      (id) => id.toString() === targetUserId.toString()
+    );
+
+    if (alreadyFollowing) {
+      await session.abortTransaction();
+      return res.status(400).json({ message: "Already following this user" });
+    }
+
+    // Check if request already sent
+    const requestSent = me.sendRequest.some(
+      (id) => id.toString() === targetUserId.toString()
+    );
+
+    if (requestSent) {
+      await session.abortTransaction();
+      return res.status(400).json({ message: "Follow request already sent" });
+    }
+
+    if (target.isPrivate) {
+      me.sendRequest.push(targetUserId);
+      target.receivedRequest.push(userId);
+
+      await me.save({ session });
+      await target.save({ session });
+      await session.commitTransaction();
+
+      return res.status(200).json({
+        message: "Follow request sent successfully",
+        requested: true,
+        followed: false,
+      });
+    } else {
+      me.following.push(targetUserId);
+      target.followers.push(userId);
+
+      await me.save({ session });
+      await target.save({ session });
+      await session.commitTransaction();
+
+      return res.status(200).json({
+        message: "Followed successfully",
+        requested: false,
+        followed: true,
+      });
+    }
+  } catch (error) {
+    if (session?.inTransaction()) {
+      await session.abortTransaction();
+    }
+    return res
+      .status(500)
+      .json({ message: `Internal Server Error: ${error.message}` });
+  } finally {
+    if (session) {
+      session.endSession();
+    }
+  }
+};
+
+const unFollowSomeOne = async (req, res) => {
+  let session = null;
+  try {
+    const targetUserId = req.params.id;
+    const userId = req.userId;
+
+    if (!targetUserId) {
+      return res.status(400).json({ message: "Target User ID is required" });
+    }
+
+    session = await mongoose.startSession();
+    session.startTransaction();
+
+    const me = await User.findById(userId).session(session);
+    const target = await User.findById(targetUserId).session(session);
+
+    if (!me || !target) {
+      await session.abortTransaction();
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    me.following = me.following.filter(
+      (id) => id.toString() !== targetUserId.toString()
+    );
+    target.followers = target.followers.filter(
+      (id) => id.toString() !== userId.toString()
+    );
+
+    await me.save({ session });
+    await target.save({ session });
+    await session.commitTransaction();
+
+    return res.status(200).json({ message: "Unfollowed successfully" });
+  } catch (error) {
+    if (session?.inTransaction()) {
+      await session.abortTransaction();
+    }
+    return res
+      .status(500)
+      .json({ message: `Internal Server Error: ${error.message}` });
+  } finally {
+    if (session) {
+      session.endSession();
+    }
+  }
+};
+
+const cancelSendedFollowRequest = async (req, res) => {
+  let session = null;
+  try {
+    const targetUserId = req.params.id;
+    const userId = req.userId;
+
+    if (!targetUserId) {
+      return res.status(400).json({ message: "Target User ID is required" });
+    }
+
+    session = await mongoose.startSession();
+    session.startTransaction();
+
+    const me = await User.findById(userId).session(session);
+    const target = await User.findById(targetUserId).session(session);
+
+    if (!me || !target) {
+      await session.abortTransaction();
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    me.sendRequest = me.sendRequest.filter(
+      (id) => id.toString() !== targetUserId.toString()
+    );
+    target.receivedRequest = target.receivedRequest.filter(
+      (id) => id.toString() !== userId.toString()
+    );
+
+    await me.save({ session });
+    await target.save({ session });
+    await session.commitTransaction();
+
+    return res.status(200).json({ message: "Follow request cancelled" });
+  } catch (error) {
+    if (session?.inTransaction()) {
+      await session.abortTransaction();
+    }
+    return res
+      .status(500)
+      .json({ message: `Internal Server Error: ${error.message}` });
+  } finally {
+    if (session) {
+      session.endSession();
+    }
+  }
+};
+
+const acceptFollowRequest = async (req, res) => {
+  let session = null;
+  try {
+    const requesterId = req.params.id;
+    const userId = req.userId;
+
+    if (!requesterId) {
+      return res.status(400).json({ message: "Requester ID is required" });
+    }
+
+    session = await mongoose.startSession();
+    session.startTransaction();
+
+    const me = await User.findById(userId).session(session);
+    const requester = await User.findById(requesterId).session(session);
+
+    if (!me || !requester) {
+      await session.abortTransaction();
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const hasRequest = me.receivedRequest.some(
+      (id) => id.toString() === requesterId.toString()
+    );
+
+    if (!hasRequest) {
+      await session.abortTransaction();
+      return res.status(400).json({ message: "No follow request from this user" });
+    }
+
+    me.receivedRequest = me.receivedRequest.filter(
+      (id) => id.toString() !== requesterId.toString()
+    );
+    requester.sendRequest = requester.sendRequest.filter(
+      (id) => id.toString() !== userId.toString()
+    );
+
+    me.followers.push(requesterId);
+    requester.following.push(userId);
+
+    await me.save({ session });
+    await requester.save({ session });
+    await session.commitTransaction();
+
+    return res.status(200).json({ message: "Follow request accepted" });
+  } catch (error) {
+    if (session?.inTransaction()) {
+      await session.abortTransaction();
+    }
+    return res
+      .status(500)
+      .json({ message: `Internal Server Error: ${error.message}` });
+  } finally {
+    if (session) {
+      session.endSession();
+    }
+  }
+};
+
+const rejectFollowRequest = async (req, res) => {
+  let session = null;
+  try {
+    const requesterId = req.params.id;
+    const userId = req.userId;
+
+    if (!requesterId) {
+      return res.status(400).json({ message: "Requester ID is required" });
+    }
+
+    session = await mongoose.startSession();
+    session.startTransaction();
+
+    const me = await User.findById(userId).session(session);
+    const requester = await User.findById(requesterId).session(session);
+
+    if (!me || !requester) {
+      await session.abortTransaction();
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    me.receivedRequest = me.receivedRequest.filter(
+      (id) => id.toString() !== requesterId.toString()
+    );
+    requester.sendRequest = requester.sendRequest.filter(
+      (id) => id.toString() !== userId.toString()
+    );
+
+    await me.save({ session });
+    await requester.save({ session });
+    await session.commitTransaction();
+
+    return res.status(200).json({ message: "Follow request rejected" });
+  } catch (error) {
+    if (session?.inTransaction()) {
+      await session.abortTransaction();
+    }
+    return res
+      .status(500)
+      .json({ message: `Internal Server Error: ${error.message}` });
+  } finally {
+    if (session) {
+      session.endSession();
+    }
+  }
+};
+
+const getPendingRequests = async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    const me = await User.findById(userId).populate(
+      "receivedRequest",
+      "username name profilePicture"
+    );
+
+    if (!me) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({ requests: me.receivedRequest });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: `Internal Server Error: ${error.message}` });
+  }
+};
+
+const getWhoLikedPost = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const userId = req.userId;
+
+    if (!postId) {
+      return res.status(400).json({ message: "Post ID is required" });
+    }
+
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    const postAuthor = await User.findById(post.author);
+    if (!postAuthor) {
+      return res.status(404).json({ message: "Post author not found" });
+    }
+
+    const me = await User.findById(userId);
+    if (!me) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Blocking / Private account checks (except if it is user's own post)
+    const isSelf = post.author.toString() === userId.toString();
+    if (!isSelf) {
+      const isBlocked =
+        postAuthor.blockedUsers.some(
+          (id) => id.toString() === userId.toString(),
+        ) ||
+        me.blockedUsers.some(
+          (id) => id.toString() === postAuthor._id.toString(),
+        );
+
+      if (isBlocked) {
+        return res.status(403).json({
+          message: "You are blocked by the user or you have blocked the user",
+        });
+      }
+
+      const isPrivate = postAuthor.isPrivate;
+      const isFollowed = postAuthor.followers.some(
+        (id) => id.toString() === userId.toString(),
+      );
+
+      if (isPrivate && !isFollowed) {
+        return res.status(403).json({ message: "Private Account" });
+      }
+    }
+    const usersWhoLiked = await User.find({
+      _id: { $in: post.likes }
+    }).select("_id username name profilePicture blockedUsers");
+    
+    const filteredUsers = usersWhoLiked.filter((u) => {
+      const isBlocked =
+        me.blockedUsers.some((id) => id.toString() === u._id.toString()) ||
+        u.blockedUsers?.some((id) => id.toString() === userId.toString());
+      return !isBlocked;
+    }).map((u) => ({
+      _id: u._id,
+      username: u.username,
+      name: u.name,
+      profilePicture: u.profilePicture,
+    }));
+
+    return res.status(200).json({ users: filteredUsers });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: `Internal Server Error: ${error.message}` });
+  }
+};
+
 export {
-    likePost,
-    blockUser,
-    unblockUser,
-    comment,
-    deleteComment
- };
+  likePost,
+  blockUser,
+  unblockUser,
+  comment,
+  deleteComment,
+  sendFollowRequest,
+  unFollowSomeOne,
+  cancelSendedFollowRequest,
+  acceptFollowRequest,
+  rejectFollowRequest,
+  getPendingRequests,
+  getWhoLikedPost,
+};

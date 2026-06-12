@@ -9,6 +9,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 function SuggestedUsers() {
   const [users, setUsers] = useState([]);
+  const [notification, setNotification] = useState(null);
 
   const fetchSuggestedUsers = async () => {
     try {
@@ -28,15 +29,30 @@ function SuggestedUsers() {
 
   const sendRequest = async (userId) => {
     try {
+      const targetUser = users.find((u) => u._id === userId);
+      const targetUsername = targetUser?.username || "user";
+      const isPrivate = targetUser?.isPrivate;
+
       await axios.post(
-        `${API_URL}/api/user/send-request/${userId}`,
+        `${API_URL}/api/interaction/followsomeone/${userId}`,
         {},
         {
           withCredentials: true,
         },
       );
 
-      console.log("Request sent");
+      const msg = isPrivate
+        ? `Follow request sent to @${targetUsername}`
+        : `Started following @${targetUsername}`;
+
+      setNotification(msg);
+      setTimeout(() => {
+        setNotification(null);
+         window.location.reload();
+      }, 1500);
+
+      
+
     } catch (error) {
       console.log(error);
     }
@@ -52,7 +68,7 @@ function SuggestedUsers() {
         <h3>Suggested Users</h3>
 
         <button className={styles.shuffleBtn} onClick={fetchSuggestedUsers}>
-           <FaSyncAlt />
+          <FaSyncAlt />
         </button>
       </div>
 
@@ -83,11 +99,12 @@ function SuggestedUsers() {
               className={styles.requestBtn}
               onClick={() => sendRequest(user._id)}
             >
-             Follow Request
+              {user?.isPrivate ? "Follow Request" : "Follow"}
             </button>
           </div>
         ))}
       </div>
+      {notification && <div className={styles.toast}>{notification}</div>}
     </div>
   );
 }

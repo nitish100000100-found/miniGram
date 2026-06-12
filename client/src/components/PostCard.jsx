@@ -1,30 +1,114 @@
-import { useState } from "react";
-import { FaRegHeart, FaHeart, FaRegComment, FaRegPaperPlane, FaRegBookmark, FaBookmark, FaEllipsisH } from "react-icons/fa";
+import { Link } from "react-router-dom";
+import { formatDistanceToNow } from "date-fns";
+import axios from "axios";
+import {
+  FaRegHeart,
+  FaHeart,
+  FaRegComment,
+  FaRegPaperPlane,
+  FaRegBookmark,
+  FaBookmark,
+  FaEllipsisH,
+} from "react-icons/fa";
 import styles from "./PostCard.module.css";
 
-function PostCard() {
-  const [liked, setLiked] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [likesCount, setLikesCount] = useState(382);
+const API_URL = import.meta.env.VITE_API_URL;
 
-  const toggleLike = () => {
-    setLiked(!liked);
-    setLikesCount(liked ? likesCount - 1 : likesCount + 1);
+function PostCard({ post, currentUser, setCurrentUser, setPosts }) {
+  // Derive liked and saved status directly from currentUser and post props
+  const isLiked = currentUser?.likedPosts?.some(
+    (id) => id.toString() === post._id.toString()
+  );
+  const isSaved = currentUser?.savedPosts?.some(
+    (id) => id.toString() === post._id.toString()
+  );
+  const likesCount = post.likes?.length || 0;
+
+  const handleLike = async () => {
+    if (!currentUser) return;
+    try {
+      await axios.post(
+        `${API_URL}/api/interaction/like/${post._id}`,
+        {},
+        { withCredentials: true }
+      );
+      
+     
+      setCurrentUser((prev) => {
+        const liked = prev.likedPosts || [];
+        return {
+          ...prev,
+          likedPosts: isLiked
+            ? liked.filter((id) => id.toString() !== post._id.toString())
+            : [...liked, post._id],
+        };
+      });
+
+     
+      setPosts((prevPosts) =>
+        prevPosts.map((p) => {
+          if (p._id.toString() === post._id.toString()) {
+            const likes = p.likes || [];
+            return {
+              ...p,
+              likes: isLiked
+                ? likes.filter((id) => id.toString() !== currentUser._id.toString())
+                : [...likes, currentUser._id],
+            };
+          }
+          return p;
+        })
+      );
+    } catch (err) {
+      console.error("Like interaction failed:", err);
+    }
   };
 
-  const toggleSave = () => {
-    setSaved(!saved);
+  const handleSave = async () => {
+    if (!currentUser) return;
+    try {
+      await axios.post(
+        `${API_URL}/api/post/save/${post._id}`,
+        {},
+        { withCredentials: true }
+      );
+      
+     
+      setCurrentUser((prev) => {
+        const saved = prev.savedPosts || [];
+        return {
+          ...prev,
+          savedPosts: isSaved
+            ? saved.filter((id) => id.toString() !== post._id.toString())
+            : [...saved, post._id],
+        };
+      });
+    } catch (err) {
+      console.error("Save interaction failed:", err);
+    }
   };
+
+  const author = post.author
+  const isMe = author._id === currentUser?._id;
+  const authorProfileLink = isMe ? "/myInfo" : `/lookFor/${author._id}`;
 
   return (
     <div className={styles.postCard}>
       {/* Post Header */}
       <div className={styles.header}>
         <div className={styles.authorInfo}>
-          <img src="/insta.webp" alt="Author Avatar" className={styles.authorAvatar} />
+          <Link to={authorProfileLink}>
+            <img
+              src={author.profilePicture || "/insta.webp"}
+              alt={author.username || "user"}
+              className={styles.authorAvatar}
+            />
+          </Link>
           <div className={styles.meta}>
-            <span className={styles.username}>sneha_r</span>
-            <span className={styles.location}>Seattle, Washington</span>
+            <Link to={authorProfileLink} className={styles.username}>
+              {author.username || "unknown"}
+            </Link>
+          
           </div>
         </div>
         <button className={styles.moreBtn}>
@@ -34,14 +118,30 @@ function PostCard() {
 
       {/* Post Media */}
       <div className={styles.mediaContainer}>
-        <img src="/insta.webp" alt="Post Content" className={styles.media} />
+        {post.mediaType === "image" ? (
+          <img
+            src={post.mediaUrl}
+            alt={post.caption || "Post Content"}
+            className={styles.media}
+          />
+        ) : (
+          <video
+            src={post.mediaUrl}
+            className={styles.media}
+            muted
+            controls
+          />
+        )}
       </div>
 
       {/* Action Buttons */}
       <div className={styles.actions}>
         <div className={styles.leftActions}>
-          <button className={`${styles.actionBtn} ${liked ? styles.liked : ""}`} onClick={toggleLike}>
-            {liked ? <FaHeart /> : <FaRegHeart />}
+          <button
+            className={`${styles.actionBtn} ${isLiked ? styles.liked : ""}`}
+            onClick={handleLike}
+          >
+            {isLiked ? <FaHeart /> : <FaRegHeart />}
           </button>
           <button className={styles.actionBtn}>
             <FaRegComment />
@@ -50,22 +150,33 @@ function PostCard() {
             <FaRegPaperPlane />
           </button>
         </div>
-        <button className={`${styles.actionBtn} ${saved ? styles.saved : ""}`} onClick={toggleSave}>
-          {saved ? <FaBookmark /> : <FaRegBookmark />}
+        <button
+          className={`${styles.actionBtn} ${isSaved ? styles.saved : ""}`}
+          onClick={handleSave}
+        >
+          {isSaved ? <FaBookmark /> : <FaRegBookmark />}
         </button>
       </div>
 
       {/* Content Area */}
       <div className={styles.content}>
-        <div className={styles.likesCount}>
-          {likesCount.toLocaleString()} likes
-        </div>
+        <Link to={`/seeWhoLiked/${post._id}`} className={styles.likesCountLink}>
+          <div className={styles.likesCount}>
+            {likesCount.toLocaleString()} likes
+          </div>
+        </Link>
         <div className={styles.caption}>
-          <span className={styles.captionUser}>sneha_r</span>
-          Coding a brand new React application today! Let's make it look absolutely stunning. 💻⚡ #developer #reactjs #webdesign
+          <Link to={authorProfileLink} className={styles.captionUser}>
+            {author.username || "unknown"}
+          </Link>
+          <span>{post.caption}</span>
         </div>
         <div className={styles.time}>
-          45 minutes ago
+          {post.createdAt
+            ? formatDistanceToNow(new Date(post.createdAt), {
+                addSuffix: true,
+              }).toUpperCase()
+            : "JUST NOW"}
         </div>
       </div>
     </div>

@@ -10,7 +10,8 @@ const getCurrentUser = async (req, res) => {
   try {
     const userId = req.userId;
 
-    const user = await User.findById(userId).select("-password").populate("posts highlights stories");
+  
+  const user = await User.findById(userId).select("-password").populate({ path: "posts", options: { sort: { createdAt: -1 } } }).populate("highlights");
     if (!user) {
       return res.status(404).json({ message: "User not found !" });
     }
@@ -60,6 +61,7 @@ const suggestedUsers = async (req, res) => {
           username: 1,
           profilePicture: 1,
           bio: 1,
+          isPrivate: 1,
         },
       },
     ]);
@@ -164,6 +166,87 @@ const editProfile = async (req, res, next) => {
   }
 };
 
+const switchToPublic = async (req, res) => {
+  let session = null;
+  try {
+    const userId = req.userId;
+
+    session = await mongoose.startSession();
+    session.startTransaction();
+
+    const user = await User.findById(userId).session(session);
+    if (!user) {
+      await session.abortTransaction();
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (!user.isPrivate) {
+      await session.abortTransaction();
+      return res.status(400).json({ message: "Account is already public" });
+    }
+
+    // Auto-accept all pending follow requests
+    if (user.receivedRequest && user.receivedRequest.length > 0) {
+      const requesters = user.receivedRequest;
+      for (const reqId of requesters) {
+        if (!user.followers.includes(reqId)) {
+          user.followers.push(reqId);
+        }
+        await User.findByIdAndUpdate(
+          reqId,
+          {
+            $addToSet: { following: user._id },
+            $pull: { sendRequest: user._id }
+          },
+          { session }
+        );
+      }
+      user.receivedRequest = [];
+    }
+
+    user.isPrivate = false;
+    await user.save({ session });
+    await session.commitTransaction();
+
+    const updatedUser = await User.findById(userId).select("-password");
+    return res.status(200).json({ message: "Account switched to public", user: updatedUser });
+  } catch (error) {
+    if (session?.inTransaction()) {
+      await session.abortTransaction();
+    }
+    return res.status(500).json({ message: `Internal Server Error: ${error.message}` });
+  } finally {
+    if (session) {
+      session.endSession();
+    }
+  }
+};
+
+const switchToPrivate = async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.isPrivate) {
+      return res.status(400).json({ message: "Account is already private" });
+    }
+
+    user.isPrivate = true;
+    await user.save();
+
+    const updatedUser = await User.findById(userId).select("-password");
+    return res.status(200).json({ message: "Account switched to private", user: updatedUser });
+  } catch (error) {
+    return res.status(500).json({ message: `Internal Server Error: ${error.message}` });
+  }
+};
+
+
+
 const lookFor = async (req, res) => {
   try {
     const { id } = req.params;
@@ -181,8 +264,9 @@ const lookFor = async (req, res) => {
     }
 
     const profileUser = await User.findById(id)
-      .select("-password -savedPosts -likedPosts -sendRequest -receivedRequest")
-      .populate("posts highlights");
+      .select("-password -savedPosts -likedPosts")
+      .populate({ path: "posts", options: { sort: { createdAt: -1 } } })
+      .populate("highlights");
 
     if (!profileUser) {
       return res.status(404).json({
@@ -222,11 +306,25 @@ const lookFor = async (req, res) => {
       (followerId) => followerId.toString() === req.userId,
     );
 
+    const isRequested = profileUser.receivedRequest.some(
+      (reqId) => reqId.toString() === req.userId,
+    );
+
+    const hasRequestedMe = profileUser.sendRequest.some(
+      (reqId) => reqId.toString() === req.userId,
+    );
+
     const userData = profileUser.toObject();
 
     delete userData.blockedUsers;
+    delete userData.sendRequest;
+    delete userData.receivedRequest;
 
     userData.commonUsers = commonUsers;
+    userData.isFollowing = isFollowing;
+    userData.isRequested = isRequested;
+    userData.hasRequestedMe = hasRequestedMe;
+    userData.postsLength = profileUser.posts?.length || 0;
 
     if (profileUser.isPrivate && !isFollowing) {
       userData.followersLength = profileUser.followers.length;
@@ -248,4 +346,176 @@ const lookFor = async (req, res) => {
   }
 };
 
-export { getCurrentUser, suggestedUsers, editProfile, lookFor };
+const getFollowingStoriesUsers = async (req, res) => {
+  try {
+    const myId = req.userId;
+
+    const me = await User.findById(myId).select("following");
+    if (!me) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    
+    const myActiveStory = await Story.findOne({
+      author: myId,
+      deleteAt: { $gt: new Date() },
+    }).sort({ createdAt: 1 }); 
+
+    const myStoryStatus = myActiveStory ? { hasStory: 1, storyId: myActiveStory._id } : 0;
+
+    
+    const activeStories = await Story.find({
+      author: { $in: me.following },
+      deleteAt: { $gt: new Date() },
+    }).sort({ createdAt: 1 });
+
+   
+    const followingStoriesMap = {};
+    activeStories.forEach((s) => {
+      const authorId = s.author.toString();
+      if (!followingStoriesMap[authorId]) {
+        followingStoriesMap[authorId] = s._id;
+      }
+    });
+
+   
+    const followingUsersWithStories = await User.find({
+      _id: { $in: Object.keys(followingStoriesMap) },
+    }).select("username profilePicture name");
+
+    const usersList = followingUsersWithStories.map((user) => ({
+      _id: user._id,
+      username: user.username,
+      profilePicture: user.profilePicture,
+      name: user.name,
+      storyId: followingStoriesMap[user._id.toString()],
+    }));
+
+    return res.status(200).json([myStoryStatus, ...usersList]);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const getFollowers = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const user = await User.findById(id).populate({
+      path: "followers",
+      select: "_id username name profilePicture",
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+   
+    const currentUser = await User.findById(req.userId).select("blockedUsers following");
+    if (!currentUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const isBlocked =
+      currentUser.blockedUsers.some(
+        (uId) => uId.toString() === user._id.toString(),
+      ) ||
+      user.blockedUsers.some(
+        (uId) => uId.toString() === currentUser._id.toString(),
+      );
+
+    if (isBlocked) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check privacy
+    if (user.isPrivate && req.userId !== id) {
+      const isFollowing = user.followers.some(
+        (f) => f._id.toString() === req.userId,
+      );
+      if (!isFollowing) {
+        return res.status(403).json({ message: "Private account" });
+      }
+    }
+
+    return res.status(200).json({
+      username: user.username,
+      followers: user.followers || [],
+      currentUserId: req.userId,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const getFollowing = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const user = await User.findById(id).populate({
+      path: "following",
+      select: "_id username name profilePicture",
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+   
+    const currentUser = await User.findById(req.userId).select("blockedUsers following");
+    if (!currentUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const isBlocked =
+      currentUser.blockedUsers.some(
+        (uId) => uId.toString() === user._id.toString(),
+      ) ||
+      user.blockedUsers.some(
+        (uId) => uId.toString() === currentUser._id.toString(),
+      );
+
+    if (isBlocked) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    
+    if (user.isPrivate && req.userId !== id) {
+      const targetUser = await User.findById(id).select("followers");
+      const isFollowing = targetUser.followers.some(
+        (fId) => fId.toString() === req.userId,
+      );
+      if (!isFollowing) {
+        return res.status(403).json({ message: "Private account" });
+      }
+    }
+
+    return res.status(200).json({
+      username: user.username,
+      following: user.following || [],
+      currentUserId: req.userId,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export {
+  getCurrentUser,
+  suggestedUsers,
+  editProfile,
+  lookFor,
+  getFollowingStoriesUsers,
+  switchToPublic,
+  switchToPrivate,
+  getFollowers,
+  getFollowing,
+};

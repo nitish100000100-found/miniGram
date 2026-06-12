@@ -1,0 +1,265 @@
+import axios from "axios";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { formatDistanceToNow } from "date-fns";
+import {
+  FaHeart,
+  FaRegHeart,
+  FaRegComment,
+  FaRegPaperPlane,
+  FaBookmark,
+  FaRegBookmark,
+  FaEllipsisH,
+  FaArrowLeft,
+} from "react-icons/fa";
+import styles from "./ExplorePost.module.css";
+
+const API_URL = import.meta.env.VITE_API_URL;
+
+function ExplorePost() {
+  const navigate = useNavigate();
+  const [posts, setPosts] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchExploreData = async () => {
+      try {
+        const res = await axios.get(
+          `${API_URL}/api/post/explore`,
+          { withCredentials: true }
+        );
+        setPosts(res.data.posts || []);
+        setCurrentUser(res.data.currentUser);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load explore feed.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchExploreData();
+  }, []);
+
+  const handleLike = async (postId, isLiked) => {
+    if (!currentUser) return;
+    try {
+      await axios.post(
+        `${API_URL}/api/interaction/like/${postId}`,
+        {},
+        { withCredentials: true }
+      );
+     
+      setCurrentUser((prev) => {
+        const liked = prev.likedPosts || [];
+        return {
+          ...prev,
+          likedPosts: isLiked
+            ? liked.filter((id) => id.toString() !== postId.toString())
+            : [...liked, postId],
+        };
+      });
+     
+      setPosts((prevPosts) =>
+        prevPosts.map((post) => {
+          if (post._id.toString() === postId.toString()) {
+            const likes = post.likes || [];
+            return {
+              ...post,
+              likes: isLiked
+                ? likes.filter((id) => id.toString() !== currentUser._id.toString())
+                : [...likes, currentUser._id],
+            };
+          }
+          return post;
+        })
+      );
+    } catch (err) {
+      console.error("Like interaction failed:", err);
+    }
+  };
+
+  const handleSave = async (postId, isSaved) => {
+    try {
+      await axios.post(
+        `${API_URL}/api/post/save/${postId}`,
+        {},
+        { withCredentials: true }
+      );
+      setCurrentUser((prev) => {
+        const saved = prev.savedPosts || [];
+        return {
+          ...prev,
+          savedPosts: isSaved
+            ? saved.filter((id) => id.toString() !== postId.toString())
+            : [...saved, postId],
+        };
+      });
+    } catch (err) {
+      console.error("Save interaction failed:", err);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className={styles.loadingContainer}>
+        <div className={styles.spinner}></div>
+        <p>Loading explore feed...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.page}>
+      {/* TOP HEADER */}
+      <div className={styles.topBar}>
+        <Link to="/" className={styles.logo}>
+          <img src="/favicon-v2.svg" alt="miniGram" />
+          <h1>MiniGram</h1>
+        </Link>
+      </div>
+
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <button className={styles.backBtn} onClick={() => navigate("/")}>
+            <FaArrowLeft />
+          </button>
+          <h2>Explore Feed</h2>
+        </div>
+
+        {error ? (
+          <div className={styles.errorState}>
+            <p>{error}</p>
+          </div>
+        ) : posts.length === 0 ? (
+          <div className={styles.emptyPosts}>
+            <h2>No Posts Available</h2>
+            <p>Check back later for new content from other users!</p>
+          </div>
+        ) : (
+          <div className={styles.postsList}>
+            {posts.map((post) => {
+              if (!post.author) return null;
+
+              const isLiked = currentUser?.likedPosts?.some(
+                (id) => id.toString() === post._id.toString()
+              );
+              const isSaved = currentUser?.savedPosts?.some(
+                (id) => id.toString() === post._id.toString()
+              );
+
+              return (
+                <div key={post._id} className={styles.feedPostCard}>
+                  {/* Post Header */}
+                  <div className={styles.postHeader}>
+                    <Link
+                      to={`/lookFor/${post.author._id}`}
+                      className={styles.postAuthorInfo}
+                    >
+                      <img
+                        src={post.author.profilePicture || "/insta.webp"}
+                        alt={post.author.username}
+                        className={styles.postAuthorAvatar}
+                      />
+                      <div className={styles.postMeta}>
+                        <span className={styles.postUsername}>
+                          {post.author.username}
+                        </span>
+                        {post.location && (
+                          <span className={styles.postLocation}>
+                            {post.location}
+                          </span>
+                        )}
+                      </div>
+                    </Link>
+                    <button className={styles.postMoreBtn}>
+                      <FaEllipsisH />
+                    </button>
+                  </div>
+
+                  {/* Post Media */}
+                  <div className={styles.postMediaContainer}>
+                    {post.mediaType === "image" ? (
+                      <img
+                        src={post.mediaUrl}
+                        alt={post.caption || "Post"}
+                        className={styles.postImage}
+                      />
+                    ) : (
+                      <video
+                        src={post.mediaUrl}
+                        className={styles.postImage}
+                        muted
+                        controls
+                      />
+                    )}
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className={styles.postActions}>
+                    <div className={styles.postLeftActions}>
+                      <button
+                        className={`${styles.postActionBtn} ${
+                          isLiked ? styles.postLiked : ""
+                        }`}
+                        onClick={() => handleLike(post._id, isLiked)}
+                      >
+                        {isLiked ? <FaHeart /> : <FaRegHeart />}
+                      </button>
+                      <button className={styles.postActionBtn}>
+                        <FaRegComment />
+                      </button>
+                      <button className={styles.postActionBtn}>
+                        <FaRegPaperPlane />
+                      </button>
+                    </div>
+
+                    <button
+                      className={`${styles.postActionBtn} ${
+                        isSaved ? styles.postSaved : ""
+                      }`}
+                      onClick={() => handleSave(post._id, isSaved)}
+                    >
+                      {isSaved ? <FaBookmark /> : <FaRegBookmark />}
+                    </button>
+                  </div>
+
+                  {/* Content Area */}
+                  <div className={styles.postContent}>
+                    <Link to={`/seeWhoLiked/${post._id}`} className={styles.likesCountLink}>
+                      <div className={styles.postLikesCount}>
+                        {(post.likes?.length || 0).toLocaleString()} likes
+                      </div>
+                    </Link>
+                    <div className={styles.postCaption}>
+                      <Link
+                        to={`/lookFor/${post.author._id}`}
+                        className={styles.postCaptionUser}
+                      >
+                        {post.author.username}
+                      </Link>
+                      <span className={styles.postCaptionText}>
+                        {post.caption}
+                      </span>
+                    </div>
+                    <div className={styles.postTime}>
+                      {post.createdAt
+                        ? formatDistanceToNow(new Date(post.createdAt), {
+                            addSuffix: true,
+                          }).toUpperCase()
+                        : "JUST NOW"}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default ExplorePost;

@@ -1,6 +1,7 @@
 import axios from "axios";
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { formatDistanceToNow } from "date-fns";
 
 import {
   FaUser,
@@ -8,18 +9,19 @@ import {
   FaVenusMars,
   FaInfoCircle,
   FaLock,
-} from "react-icons/fa";
-import { MdOutlinePersonOff } from "react-icons/md";
-
-import styles from "./LookFor.module.css";
-import {
   FaHeart,
   FaRegHeart,
   FaComment,
   FaShare,
   FaBookmark,
   FaRegBookmark,
+  FaEllipsisH,
+  FaRegComment,
+  FaRegPaperPlane,
 } from "react-icons/fa";
+import { MdOutlinePersonOff } from "react-icons/md";
+
+import styles from "./LookFor.module.css";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -36,10 +38,71 @@ function LookFor() {
   //current user is me
   // user is the one i'm looking for
 
-  const handleLike = (id,isLiked) => console.log("Like:", id,isLiked);
+  const handleLike = async (postId, isLiked) => {
+    if (!currentUser) return;
+    try {
+      await axios.post(
+        `${API_URL}/api/interaction/like/${postId}`,
+        {},
+        { withCredentials: true }
+      );
+      
+      setCurrentUser((prev) => {
+        const liked = prev.likedPosts || [];
+        return {
+          ...prev,
+          likedPosts: isLiked
+            ? liked.filter((id) => id.toString() !== postId.toString())
+            : [...liked, postId],
+        };
+      });
+
+      setUser((prev) => {
+        if (!prev) return prev;
+        const updatedPosts = (prev.posts || []).map((p) => {
+          if (p._id.toString() === postId.toString()) {
+            const likes = p.likes || [];
+            return {
+              ...p,
+              likes: isLiked
+                ? likes.filter((id) => id.toString() !== currentUser._id.toString())
+                : [...likes, currentUser._id],
+            };
+          }
+          return p;
+        });
+        return { ...prev, posts: updatedPosts };
+      });
+    } catch (err) {
+      console.error("Like interaction failed:", err);
+    }
+  };
+
   const handleComment = (post) => console.log("Comment:", post);
   const handleShare = (post) => console.log("Share:", post);
-  const handleSave = (id,isSaved) => console.log("Save:", id,isSaved);
+
+  const handleSave = async (postId, isSaved) => {
+    if (!currentUser) return;
+    try {
+      await axios.post(
+        `${API_URL}/api/post/save/${postId}`,
+        {},
+        { withCredentials: true }
+      );
+      
+      setCurrentUser((prev) => {
+        const saved = prev.savedPosts || [];
+        return {
+          ...prev,
+          savedPosts: isSaved
+            ? saved.filter((id) => id.toString() !== postId.toString())
+            : [...saved, postId],
+        };
+      });
+    } catch (err) {
+      console.error("Save interaction failed:", err);
+    }
+  };
   const [showCommonUsers, setShowCommonUsers] = useState(false);
 
   useEffect(() => {
@@ -57,7 +120,7 @@ function LookFor() {
         });
 
         setUser(profileRes.data);
-        setCurrentUser(currentRes.data);
+        setCurrentUser(currentRes.data.user);
       } catch (error) {
         console.error(error);
 
@@ -91,8 +154,41 @@ function LookFor() {
 
   const sendRequest = async () => {
     try {
+      const res = await axios.post(
+        `${API_URL}/api/interaction/followsomeone/${user._id}`,
+        {
+          fromUserId: currentUser._id,
+        },
+        {
+          withCredentials: true,
+        },
+      );
+
+      if (res.data.followed) {
+        setCurrentUser((prev) => ({
+          ...prev,
+          following: [...(prev.following || []), user._id],
+        }));
+        setUser((prev) => ({
+          ...prev,
+          followers: [...(prev.followers || []), currentUser._id],
+          followersLength: (prev.followersLength ?? prev.followers?.length ?? 0) + 1,
+        }));
+      } else {
+        setCurrentUser((prev) => ({
+          ...prev,
+          sendRequest: [...(prev.sendRequest || []), user._id],
+        }));
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const unfollow = async () => {
+    try {
       await axios.post(
-        `${API_URL}/api/user/send-request/${user._id}`,
+        `${API_URL}/api/interaction/unfollowsomeone/${user._id}`,
         {
           fromUserId: currentUser._id,
         },
@@ -103,7 +199,16 @@ function LookFor() {
 
       setCurrentUser((prev) => ({
         ...prev,
-        sendRequest: [...(prev.sendRequest || []), user._id],
+        following: (prev.following || []).filter(
+          (followingId) => followingId !== user._id,
+        ),
+      }));
+      setUser((prev) => ({
+        ...prev,
+        followers: (prev.followers || []).filter(
+          (followerId) => followerId !== currentUser._id,
+        ),
+        followersLength: Math.max(0, (prev.followersLength ?? prev.followers?.length ?? 0) - 1),
       }));
     } catch (error) {
       console.error(error);
@@ -113,7 +218,7 @@ function LookFor() {
   const cancelRequest = async () => {
     try {
       await axios.post(
-        `${API_URL}/api/user/cancel-request/${user._id}`,
+        `${API_URL}/api/interaction/cancelsendrequest/${user._id}`,
         {
           fromUserId: currentUser._id,
         },
@@ -124,7 +229,7 @@ function LookFor() {
 
       setCurrentUser((prev) => ({
         ...prev,
-        sendRequest: prev.sendRequest.filter(
+        sendRequest: (prev.sendRequest || []).filter(
           (requestId) => requestId !== user._id,
         ),
       }));
@@ -175,7 +280,7 @@ function LookFor() {
 
           <div className={styles.stats}>
             <div>
-              <strong>{user.posts?.length || 0}</strong>
+              <strong>{user.postsLength ?? user.posts?.length ?? 0}</strong>
               <span>Posts</span>
             </div>
 
@@ -219,7 +324,7 @@ function LookFor() {
           {/* FOLLOW BUTTONS */}
           <div className={styles.actions}>
             {isFollowing ? (
-              <button className={styles.followingBtn}>Following</button>
+              <button className={styles.followingBtn} onClick={unfollow}>Unfollow</button>
             ) : requestSent ? (
               <button className={styles.cancelBtn} onClick={cancelRequest}>
                 Cancel Request
@@ -247,7 +352,7 @@ function LookFor() {
                       <strong>{u.username}</strong>
                     </Link>
 
-                    {idx < 2 ? ", " : ""}
+                    {idx < Math.min(3, user.commonUsers.length) - 1 ? ", " : ""}
                   </span>
                 ))}
                 {user.commonUsers.length > 3 && (
@@ -346,7 +451,7 @@ function LookFor() {
             </div>
           ) : (
             <div className={styles.postsGrid}>
-              {user.posts.map((post) => {
+              {[...(user.posts || [])].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map((post) => {
                 const isLiked = currentUser?.likedPosts?.some(
                   (id) => id.toString() === post._id.toString(),
                 );
@@ -356,39 +461,92 @@ function LookFor() {
                 );
 
                 return (
-                  <div key={post._id} className={styles.postCard}>
-                    {post.mediaType === "image" ? (
-                      <img
-                        src={post.mediaUrl}
-                        alt={post.caption || "Post"}
-                        className={styles.postImage}
-                      />
-                    ) : (
-                      <video
-                        src={post.mediaUrl}
-                        className={styles.postImage}
-                        muted
-                      />
-                    )}
-
-                    <div className={styles.overlay}>
-                      <button onClick={() => handleLike(post._id,isLiked)}>
-                        {isLiked ? <FaHeart /> : <FaRegHeart />}
-                        <span>{post.likes?.length || 0}</span>
+                  <div key={post._id} className={styles.feedPostCard}>
+                    {/* Post Header */}
+                    <div className={styles.postHeader}>
+                      <div className={styles.postAuthorInfo}>
+                        <img
+                          src={user.profilePicture || "/insta.webp"}
+                          alt="Author Avatar"
+                          className={styles.postAuthorAvatar}
+                        />
+                        <div className={styles.postMeta}>
+                          <span className={styles.postUsername}>{user.username}</span>
+                          {post.location && (
+                            <span className={styles.postLocation}>{post.location}</span>
+                          )}
+                        </div>
+                      </div>
+                      <button className={styles.postMoreBtn}>
+                        <FaEllipsisH />
                       </button>
+                    </div>
 
-                      <button onClick={() => handleComment(post)}>
-                        <FaComment />
-                        <span>{post.comments?.length || 0}</span>
-                      </button>
+                    {/* Post Media */}
+                    <div className={styles.postMediaContainer}>
+                      {post.mediaType === "image" ? (
+                        <img
+                          src={post.mediaUrl}
+                          alt={post.caption || "Post"}
+                          className={styles.postImage}
+                        />
+                      ) : (
+                        <video
+                          src={post.mediaUrl}
+                          className={styles.postImage}
+                          muted
+                          controls
+                        />
+                      )}
+                    </div>
 
-                      <button onClick={() => handleShare(post)}>
-                        <FaShare />
-                      </button>
+                    {/* Action Buttons */}
+                    <div className={styles.postActions}>
+                      <div className={styles.postLeftActions}>
+                        <button 
+                          className={`${styles.postActionBtn} ${isLiked ? styles.postLiked : ""}`}
+                          onClick={() => handleLike(post._id, isLiked)}
+                        >
+                          {isLiked ? <FaHeart /> : <FaRegHeart />}
+                        </button>
+                        <button 
+                          className={styles.postActionBtn}
+                          onClick={() => handleComment(post)}
+                        >
+                          <FaRegComment />
+                        </button>
+                        <button 
+                          className={styles.postActionBtn}
+                          onClick={() => handleShare(post)}
+                        >
+                          <FaRegPaperPlane />
+                        </button>
+                      </div>
 
-                      <button onClick={() => handleSave(post._id,isSaved)}>
+                      <button 
+                        className={`${styles.postActionBtn} ${isSaved ? styles.postSaved : ""}`}
+                        onClick={() => handleSave(post._id, isSaved)}
+                      >
                         {isSaved ? <FaBookmark /> : <FaRegBookmark />}
                       </button>
+                    </div>
+
+                    {/* Content Area */}
+                    <div className={styles.postContent}>
+                      <Link to={`/seeWhoLiked/${post._id}`} className={styles.likesCountLink}>
+                        <div className={styles.postLikesCount}>
+                          {(post.likes?.length || 0).toLocaleString()} likes
+                        </div>
+                      </Link>
+                      <div className={styles.postCaption}>
+                        <span className={styles.postCaptionUser}>{user.username}</span>
+                        <span className={styles.postCaptionText}>{post.caption}</span>
+                      </div>
+                      <div className={styles.postTime}>
+                        {post.createdAt 
+                          ? formatDistanceToNow(new Date(post.createdAt), { addSuffix: true }).toUpperCase()
+                          : "JUST NOW"}
+                      </div>
                     </div>
                   </div>
                 );

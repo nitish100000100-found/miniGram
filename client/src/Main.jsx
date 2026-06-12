@@ -14,6 +14,13 @@ import LookFor from './pages/LookFor.jsx';
 import NotFound from "./pages/NotFound.jsx"
 import MyInfo from './pages/MyInfo.jsx';
 import EditProfile from './pages/EditProfile.jsx';
+import AddStory from './pages/AddStory.jsx';
+import LookForStory from './pages/LookForStory.jsx';
+import AddPost from './pages/AddPost.jsx';
+import LookFollowing from './pages/LookFollowing.jsx';
+import LookFollowers from './pages/LookFollowers.jsx';
+import ExplorePost from './pages/ExplorePost.jsx';
+import SeeWhoLiked from './pages/SeeWhoLiked.jsx';
 
 const router = createBrowserRouter([
   { path: "/", element: <HomePage /> , loader: protectedLoader},
@@ -42,6 +49,41 @@ const router = createBrowserRouter([
   {
     path:"/editProfile",
     element:<EditProfile/>,
+    loader: protectedLoader
+  },
+  {
+    path: "/addStory/:userId",
+    element: <AddStory />,
+    loader: protectedLoader
+  },
+  {
+    path: "/addPost",
+    element: <AddPost />,
+    loader: protectedLoader
+  },
+  {
+    path: "/lookForStory/:storyId",
+    element: <LookForStory />,
+    loader: protectedLoader
+  },
+  {
+    path: "/lookfollowing/:id",
+    element: <LookFollowing />,
+    loader: protectedLoader
+  },
+  {
+    path: "/lookfollowers/:id",
+    element: <LookFollowers />,
+    loader: protectedLoader
+  },
+  {
+    path: "/explorePost",
+    element: <ExplorePost />,
+    loader: protectedLoader
+  },
+  {
+    path: "/seeWhoLiked/:postId",
+    element: <SeeWhoLiked />,
     loader: protectedLoader
   },
 

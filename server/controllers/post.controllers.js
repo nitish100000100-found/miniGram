@@ -282,7 +282,7 @@ const getExplorePosts = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Get users who blocked me
+  
     const blockedBy = (
       await User.find({ blockedUsers: userId }).select("_id")
     ).map((u) => u._id);
@@ -290,11 +290,10 @@ const getExplorePosts = async (req, res) => {
     const excludedUsers = [...me.blockedUsers, ...blockedBy];
 
     const validAuthors = await User.find({
-      _id: { $nin: excludedUsers },
+      _id: { $nin: [...excludedUsers, userId] },
       $or: [
         { isPrivate: false },
         { _id: { $in: me.following } },
-        { _id: userId },
       ],
     }).select("_id");
 
@@ -305,7 +304,15 @@ const getExplorePosts = async (req, res) => {
       .populate("comments.commentedBy", "username profilePicture name")
       .sort({ createdAt: -1 });
 
-    return res.status(200).json({ posts });
+    return res.status(200).json({
+      posts,
+      currentUser: {
+        _id: me._id,
+        username: me.username,
+        likedPosts: me.likedPosts,
+        savedPosts: me.savedPosts,
+      },
+    });
   } catch (error) {
     return res
       .status(500)

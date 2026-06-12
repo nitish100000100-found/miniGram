@@ -1,6 +1,7 @@
+import { Link } from "react-router-dom";
 import styles from "./MobileTopBar.module.css";
 import { FaRegHeart } from "react-icons/fa";
-import {  FiCompass } from "react-icons/fi";
+import { FiCompass } from "react-icons/fi";
 import { BiMessageRounded } from "react-icons/bi";
 
 function MobileTopBar() {
@@ -12,10 +13,11 @@ function MobileTopBar() {
       </div>
 
       <div className={styles.right}>
-        <FiCompass /> 
+        <Link to="/explorePost">
+          <FiCompass />
+        </Link>
         <FaRegHeart />
-    
-       <BiMessageRounded />
+        <BiMessageRounded />
       </div>
     </div>
   );

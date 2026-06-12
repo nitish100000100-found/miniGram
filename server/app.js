@@ -1,9 +1,7 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import dotenv from "dotenv";
-dotenv.config();
-import connectDB from "./config/db.js";
+
 import authRouter from "./routes/auth.route.js";
 import userRouter from "./routes/user.route.js";
 import postRouter from "./routes/post.route.js";
@@ -11,25 +9,31 @@ import interactionRouter from "./routes/interaction.route.js";
 import loopRouter from "./routes/loop.route.js";
 import storyRouter from "./routes/story.route.js";
 
+import errorHandler from "./middleware/error.middleware.js";
+
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 app.use(
   cors({
     origin: process.env.ALLOWED_ORIGINS.split(","),
     methods: ["GET", "POST"],
     credentials: true,
-  }),
+  })
 );
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
 
-app.get("/", (req, res, next) => {
-  res.send("Hello World!");
+// Health Check Route
+app.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "MiniGram API is running 🚀",
+  });
 });
 
+// Routes
 app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
 app.use("/api/post", postRouter);
@@ -37,30 +41,7 @@ app.use("/api/interaction", interactionRouter);
 app.use("/api/loop", loopRouter);
 app.use("/api/story", storyRouter);
 
-app.use((err, req, res, next) => {
-  if (err.code === "LIMIT_FILE_SIZE") {
-    return res.status(400).json({
-      success: false,
-      message: "File size cannot exceed 25 MB",
-    });
-  }
+// Global Error Handler
+app.use(errorHandler);
 
-  if (err.message === "Only images and videos are allowed") {
-    return res.status(400).json({
-      success: false,
-      message: err.message,
-    });
-  }
-
-  return res.status(err.statusCode || 500).json({
-    success: false,
-    message: err.message || "Internal Server Error",
-  });
-});
-
-connectDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`The Server is running at: http://localhost:${PORT}`);
-    console.log(`Allowed Origins: ${process.env.ALLOWED_ORIGINS}`);
-  });
-});
+export default app;
