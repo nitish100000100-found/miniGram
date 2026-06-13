@@ -9,7 +9,8 @@ const API_URL = import.meta.env.VITE_API_URL;
 function Stories() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
-  const [storyUsers, setStoryUsers] = useState([]);
+  const [myStoryData, setMyStoryData] = useState(null);
+  const [followingUsers, setFollowingUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const pressStartTime = useRef(null);
@@ -24,7 +25,8 @@ function Stories() {
           }),
         ]);
         setCurrentUser(userRes.data.user);
-        setStoryUsers(storyUsersRes.data || []);
+        setMyStoryData(storyUsersRes.data.myStory || null);
+        setFollowingUsers(storyUsersRes.data.following || []);
       } catch (error) {
         console.error("Error loading stories feed:", error);
       } finally {
@@ -66,11 +68,9 @@ function Stories() {
     );
   }
 
-  const myStoryData = storyUsers[0];
   const hasMyStory = myStoryData && myStoryData.hasStory;
   const myStoryId = myStoryData ? myStoryData.targetStoryId : null;
   const myAllViewed = myStoryData ? myStoryData.allViewed : true;
-  const followingUsers = storyUsers.slice(1);
 
   return (
     <div className={styles.storiesContainer}>
@@ -100,7 +100,7 @@ function Stories() {
       {/* Following users story circles */}
       {followingUsers.map((user) => (
         <Link
-          key={user._id}
+          key={user.userId}
           to={`/lookForStory/${user.targetStoryId}`}
           className={styles.storyItem}
           style={{ textDecoration: "none" }}

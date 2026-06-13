@@ -86,12 +86,17 @@ const deleteStory = async (req, res) => {
         resource_type: story.mediaType === "video" ? "video" : "image",
       });
     } catch (cloudinaryErr) {
-      console.error("Failed to delete story media from Cloudinary:", cloudinaryErr);
+      console.error(
+        "Failed to delete story media from Cloudinary:",
+        cloudinaryErr,
+      );
     }
 
     await story.deleteOne();
 
-    await User.findByIdAndUpdate(story.author, { $pull: { stories: story._id } });
+    await User.findByIdAndUpdate(story.author, {
+      $pull: { stories: story._id },
+    });
 
     return res.status(200).json({
       message: "Story deleted successfully",
@@ -156,10 +161,10 @@ const getOneStory = async (req, res) => {
       return res.status(404).json({ message: "Story expired" });
     }
 
-   
-    if (
-      !currentStory.viewedBy.some((v) => (v._id ? v._id.toString() : v.toString()) === myId.toString())
-    ) {
+    const alreadyViewed = currentStory.viewedBy.some(
+      (v) => v._id.toString() === myId.toString(),
+    );
+    if (!alreadyViewed) {
       currentStory.viewedBy.push(myId);
       await currentStory.save();
     }
@@ -229,6 +234,4 @@ const getAllStories = async (req, res) => {
   }
 };
 
-
-
-export { addStory, deleteStory, getOneStory, getAllStories};
+export { addStory, deleteStory, getOneStory, getAllStories };

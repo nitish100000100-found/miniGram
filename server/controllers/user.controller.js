@@ -384,111 +384,107 @@ const getFollowingStoriesUsers = async (req, res) => {
   try {
     const myId = req.userId;
 
-    const me = await User.findById(myId).select("following blockedUsers");
+    // 1. Current user verify + following populate
+    const me = await User.findById(myId).populate(
+      "following",
+      "username profilePicture name"
+    );
     if (!me) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const blockedBy = (
-      await User.find({ blockedUsers: myId }).select("_id")
-    ).map((u) => u._id);
+    // 2. Following users ki saari active stories nikalo
+    const activeStories = await Story.find({
+      author: { $in: me.following.map((u) => u._id) },
+      deleteAt: { $gt: new Date() },
+    }).sort({ createdAt: 1 }); // oldest -> newest
 
-    const excludedUsers = [...me.blockedUsers, ...blockedBy];
+    // 3. Har following user ko check karo, jiski story hai usko process karo
+    const followingStories = [];
 
-    const allowedFollowing = me.following.filter(
-      (id) => !excludedUsers.some((excludedId) => excludedId.toString() === id.toString())
-    );
+    for (const user of me.following) {
+      const userStories = activeStories.filter(
+        (s) => s.author.toString() === user._id.toString()
+      );
 
-    // 1. Current User (Own Story) Logic
+      if (userStories.length === 0) continue; // story nahi hai to skip
+
+      let status = 0;
+      let targetStoryId = userStories[0]._id; // default: oldest story
+
+      for (const story of userStories) {
+        const seen = story.viewedBy.some((v) => v.toString() === myId.toString());
+        if (!seen) {
+          status = 1;
+          targetStoryId = story._id;
+          break;
+        }
+      }
+
+      followingStories.push({
+        status,
+        targetStoryId,
+        userId: user._id,
+        username: user.username,
+        name: user.name,
+        profilePicture: user.profilePicture,
+        latestStoryCreatedAt: userStories[userStories.length - 1].createdAt,
+      });
+    }
+
+    // 4. Unseen aur seen ko alag karo
+    const unseen = [];
+    const seenList = [];
+
+    for (const item of followingStories) {
+      if (item.status === 1) {
+        unseen.push(item);
+      } else {
+        seenList.push(item);
+      }
+    }
+
+    // Dono groups ko latest story time ke hisaab se sort karo (newest first)
+    unseen.sort((a, b) => new Date(b.latestStoryCreatedAt) - new Date(a.latestStoryCreatedAt));
+    seenList.sort((a, b) => new Date(b.latestStoryCreatedAt) - new Date(a.latestStoryCreatedAt));
+
+    // Unseen pehle, fir seen
+    const sortedFollowingStories = [...unseen, ...seenList];
+
+    // 5. Final response ke liye sirf zaroori fields rakho
+    const finalFollowing = sortedFollowingStories.map((item) => {
+      return {
+        status: item.status,
+        targetStoryId: item.targetStoryId,
+        userId: item.userId,
+        username: item.username,
+        name: item.name,
+        profilePicture: item.profilePicture,
+      };
+    });
+
+    // 6. Own story status
     const myStories = await Story.find({
       author: myId,
       deleteAt: { $gt: new Date() },
     }).sort({ createdAt: 1 });
 
-    let myStoryStatus = {
-      hasStory: false,
-      allViewed: true,
-      targetStoryId: null
-    };
+    let myStoryStatus = { hasStory: false, allViewed: true, targetStoryId: null };
 
     if (myStories.length > 0) {
-      const firstUnseenStory = myStories.find(
-        (story) => !story.viewedBy.some((v) => v.toString() === myId.toString())
+      const firstUnseen = myStories.find(
+        (s) => !s.viewedBy.some((v) => v.toString() === myId.toString())
       );
-      if (firstUnseenStory) {
-        myStoryStatus = {
-          hasStory: true,
-          allViewed: false,
-          targetStoryId: firstUnseenStory._id
-        };
-      } else {
-        myStoryStatus = {
-          hasStory: true,
-          allViewed: true,
-          targetStoryId: myStories[0]._id
-        };
-      }
+
+      myStoryStatus = firstUnseen
+        ? { hasStory: true, allViewed: false, targetStoryId: firstUnseen._id }
+        : { hasStory: true, allViewed: true, targetStoryId: myStories[0]._id };
     }
 
-    // 2. Following Users Story Processing
-    const activeStories = await Story.find({
-      author: { $in: allowedFollowing },
-      deleteAt: { $gt: new Date() },
-    }).sort({ createdAt: 1 });
-
-    const authorsWithStories = [...new Set(activeStories.map((s) => s.author.toString()))];
-
-    const followingUsersWithStories = await User.find({
-      _id: { $in: authorsWithStories },
-    }).select("username profilePicture name");
-
-    const processedUsers = followingUsersWithStories.map((user) => {
-      const userStories = activeStories.filter(
-        (s) => s.author.toString() === user._id.toString()
-      );
-
-      const firstUnseenStory = userStories.find(
-        (story) => !story.viewedBy.some((v) => v.toString() === myId.toString())
-      );
-
-      let status = 0;
-      let targetStoryId = null;
-
-      if (userStories.length > 0) {
-        if (firstUnseenStory) {
-          status = 1;
-          targetStoryId = firstUnseenStory._id;
-        } else {
-          status = 0;
-          targetStoryId = userStories[0]._id;
-        }
-      }
-
-      const latestStory = userStories[userStories.length - 1];
-      const latestStoryCreatedAt = latestStory ? latestStory.createdAt : new Date(0);
-
-      return {
-        _id: user._id,
-        username: user.username,
-        profilePicture: user.profilePicture,
-        name: user.name,
-        status,
-        targetStoryId,
-        latestStoryCreatedAt
-      };
+    return res.status(200).json({
+      myStory: myStoryStatus,
+      following: finalFollowing,
     });
-
-    // 3. Sorting following users
-    processedUsers.sort((a, b) => {
-      // Unseen (status = 1) first, seen (status = 0) second
-      if (b.status !== a.status) {
-        return b.status - a.status;
-      }
-      // Sort by latest story timestamp (newest first)
-      return new Date(b.latestStoryCreatedAt) - new Date(a.latestStoryCreatedAt);
-    });
-
-    return res.status(200).json([myStoryStatus, ...processedUsers]);
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
