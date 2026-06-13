@@ -163,7 +163,7 @@ const LookForStory = () => {
 
       <div className={styles.topBar}>
         <Link
-          to={`/lookFor/${currentStory.author._id}`}
+          to={isOwner ? "/myInfo" : `/lookFor/${currentStory.author._id}`}
           style={{
             textDecoration: "none",
             color: "inherit",
