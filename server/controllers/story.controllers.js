@@ -158,7 +158,6 @@ const getOneStory = async (req, res) => {
 
    
     if (
-      !isSelf &&
       !currentStory.viewedBy.some((v) => (v._id ? v._id.toString() : v.toString()) === myId.toString())
     ) {
       currentStory.viewedBy.push(myId);

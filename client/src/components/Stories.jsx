@@ -67,11 +67,9 @@ function Stories() {
   }
 
   const myStoryData = storyUsers[0];
-  const hasMyStory =
-    myStoryData &&
-    typeof myStoryData === "object" &&
-    myStoryData.hasStory === 1;
-  const myStoryId = hasMyStory ? myStoryData.storyId : null;
+  const hasMyStory = myStoryData && myStoryData.hasStory;
+  const myStoryId = myStoryData ? myStoryData.targetStoryId : null;
+  const myAllViewed = myStoryData ? myStoryData.allViewed : true;
   const followingUsers = storyUsers.slice(1);
 
   return (
@@ -86,7 +84,7 @@ function Stories() {
           onTouchEnd={() => handlePressEnd(hasMyStory, myStoryId)}
         >
           <div
-            className={`${styles.avatarRing} ${hasMyStory ? styles.unviewedRing : styles.userRing}`}
+            className={`${styles.avatarRing} ${hasMyStory && !myAllViewed ? "" : styles.userRing}`}
           >
             <img
               src={currentUser.profilePicture || "/insta.webp"}
@@ -103,11 +101,11 @@ function Stories() {
       {followingUsers.map((user) => (
         <Link
           key={user._id}
-          to={`/lookForStory/${user.storyId}`}
+          to={`/lookForStory/${user.targetStoryId}`}
           className={styles.storyItem}
           style={{ textDecoration: "none" }}
         >
-          <div className={`${styles.avatarRing} ${styles.unviewedRing}`}>
+          <div className={`${styles.avatarRing} ${user.status === 1 ? "" : styles.userRing}`}>
             <img
               src={user.profilePicture || "/insta.webp"}
               alt={user.username}

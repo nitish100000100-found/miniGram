@@ -50,17 +50,34 @@ function ProfileCard() {
   }
 
   const hasStories = user.stories && user.stories.length > 0;
+  let targetStoryId = null;
+  let hasUnviewedStories = false;
+
+  if (hasStories) {
+    const firstUnseen = user.stories.find(
+      (story) => !story.viewedBy?.some((v) => (v._id ? v._id.toString() : v.toString()) === user._id.toString())
+    );
+    if (firstUnseen) {
+      targetStoryId = firstUnseen._id;
+      hasUnviewedStories = true;
+    } else {
+      targetStoryId = user.stories[0]._id;
+      hasUnviewedStories = false;
+    }
+  }
 
   return (
     <div className={styles.profileCard}>
       <div className={styles.profileLeft}>
         {hasStories ? (
-          <Link to={`/lookForStory/${user.stories[0]._id || user.stories[0]}`}>
-            <img
-              src={user.profilePicture || "/insta.webp"}
-              alt={user.name}
-              className={`${styles.profileImage} ${styles.avatarWithStory}`}
-            />
+          <Link to={`/lookForStory/${targetStoryId}`}>
+            <div className={`${styles.avatarRing} ${hasUnviewedStories ? "" : styles.userRing}`}>
+              <img
+                src={user.profilePicture || "/insta.webp"}
+                alt={user.name}
+                className={styles.avatar}
+              />
+            </div>
           </Link>
         ) : (
           <Link to="/myInfo">
@@ -75,7 +92,6 @@ function ProfileCard() {
         <Link to="/myInfo" className={styles.profileLink}>
           <div className={styles.userInfo}>
             <h3>{user.name}</h3>
-            <p>@{user.username}</p>
           </div>
         </Link>
       </div>

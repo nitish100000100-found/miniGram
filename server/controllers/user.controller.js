@@ -399,43 +399,96 @@ const getFollowingStoriesUsers = async (req, res) => {
       (id) => !excludedUsers.some((excludedId) => excludedId.toString() === id.toString())
     );
 
-    
-    const myActiveStory = await Story.findOne({
+    // 1. Current User (Own Story) Logic
+    const myStories = await Story.find({
       author: myId,
       deleteAt: { $gt: new Date() },
-    }).sort({ createdAt: 1 }); 
+    }).sort({ createdAt: 1 });
 
-    const myStoryStatus = myActiveStory ? { hasStory: 1, storyId: myActiveStory._id } : 0;
+    let myStoryStatus = {
+      hasStory: false,
+      allViewed: true,
+      targetStoryId: null
+    };
 
-    
+    if (myStories.length > 0) {
+      const firstUnseenStory = myStories.find(
+        (story) => !story.viewedBy.some((v) => v.toString() === myId.toString())
+      );
+      if (firstUnseenStory) {
+        myStoryStatus = {
+          hasStory: true,
+          allViewed: false,
+          targetStoryId: firstUnseenStory._id
+        };
+      } else {
+        myStoryStatus = {
+          hasStory: true,
+          allViewed: true,
+          targetStoryId: myStories[0]._id
+        };
+      }
+    }
+
+    // 2. Following Users Story Processing
     const activeStories = await Story.find({
       author: { $in: allowedFollowing },
       deleteAt: { $gt: new Date() },
     }).sort({ createdAt: 1 });
 
-   
-    const followingStoriesMap = {};
-    activeStories.forEach((s) => {
-      const authorId = s.author.toString();
-      if (!followingStoriesMap[authorId]) {
-        followingStoriesMap[authorId] = s._id;
-      }
-    });
+    const authorsWithStories = [...new Set(activeStories.map((s) => s.author.toString()))];
 
-   
     const followingUsersWithStories = await User.find({
-      _id: { $in: Object.keys(followingStoriesMap) },
+      _id: { $in: authorsWithStories },
     }).select("username profilePicture name");
 
-    const usersList = followingUsersWithStories.map((user) => ({
-      _id: user._id,
-      username: user.username,
-      profilePicture: user.profilePicture,
-      name: user.name,
-      storyId: followingStoriesMap[user._id.toString()],
-    }));
+    const processedUsers = followingUsersWithStories.map((user) => {
+      const userStories = activeStories.filter(
+        (s) => s.author.toString() === user._id.toString()
+      );
 
-    return res.status(200).json([myStoryStatus, ...usersList]);
+      const firstUnseenStory = userStories.find(
+        (story) => !story.viewedBy.some((v) => v.toString() === myId.toString())
+      );
+
+      let status = 0;
+      let targetStoryId = null;
+
+      if (userStories.length > 0) {
+        if (firstUnseenStory) {
+          status = 1;
+          targetStoryId = firstUnseenStory._id;
+        } else {
+          status = 0;
+          targetStoryId = userStories[0]._id;
+        }
+      }
+
+      const latestStory = userStories[userStories.length - 1];
+      const latestStoryCreatedAt = latestStory ? latestStory.createdAt : new Date(0);
+
+      return {
+        _id: user._id,
+        username: user.username,
+        profilePicture: user.profilePicture,
+        name: user.name,
+        status,
+        targetStoryId,
+        latestStoryCreatedAt
+      };
+    });
+
+    // 3. Sorting following users
+    processedUsers.sort((a, b) => {
+      // Unseen (status = 1) first, seen (status = 0) second
+      if (b.status !== a.status) {
+        return b.status - a.status;
+      }
+      // Sort by latest story timestamp (newest first)
+      return new Date(b.latestStoryCreatedAt) - new Date(a.latestStoryCreatedAt);
+    });
+
+    return res.status(200).json([myStoryStatus, ...processedUsers]);
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
