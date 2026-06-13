@@ -258,20 +258,30 @@ const LookForStory = () => {
           </div>
 
           <div className={styles.viewersList}>
-            {currentStory.viewedBy?.length === 0 ? (
+            {!currentStory.viewedBy || currentStory.viewedBy.length === 0 ? (
               <p>No views yet</p>
             ) : (
-              currentStory.viewedBy.map((user) => (
-                <Link
-                  key={user._id}
-                  to={`/lookFor/${user._id}`}
-                  className={styles.viewerItem}
-                >
-                  <img src={user.profilePicture || "/insta.webp"} alt="" />
-
-                  <span>{user.username}</span>
-                </Link>
-              ))
+              [...currentStory.viewedBy]
+                .sort((a, b) => {
+                  const aId = a._id ? a._id.toString() : a.toString();
+                  const bId = b._id ? b._id.toString() : b.toString();
+                  if (aId === currentUser?._id?.toString()) return -1;
+                  if (bId === currentUser?._id?.toString()) return 1;
+                  return 0;
+                })
+                .map((user) => {
+                  const isSelf = (user._id ? user._id.toString() : user.toString()) === currentUser?._id?.toString();
+                  return (
+                    <Link
+                      key={user._id}
+                      to={isSelf ? "/myInfo" : `/lookFor/${user._id}`}
+                      className={styles.viewerItem}
+                    >
+                      <img src={user.profilePicture || "/insta.webp"} alt="" />
+                      <span>{isSelf ? "You" : user.username}</span>
+                    </Link>
+                  );
+                })
             )}
           </div>
         </div>
