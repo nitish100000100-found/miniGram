@@ -8,6 +8,7 @@ import {
   getFeedPosts,
   getExplorePosts,
   getSavedPosts,
+  getPostComments,
 } from "../controllers/post.controllers.js";
 
 const postRouter = express.Router();
@@ -18,5 +19,6 @@ postRouter.post("/save/:postId", isAuth, savePost);
 postRouter.get("/feed", isAuth, getFeedPosts);
 postRouter.get("/explore", isAuth, getExplorePosts);
 postRouter.get("/saved", isAuth, getSavedPosts);
+postRouter.get("/getallcomments/:postId", isAuth, getPostComments);
 
 export default postRouter;

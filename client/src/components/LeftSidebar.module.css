@@ -8,14 +8,9 @@
   flex-direction: column;
   gap: 24px;
 
-  background: linear-gradient(
-    180deg,
-    #0c0720 0%,
-    #140b32 50%,
-    #1a0d3f 100%
-  );
+  background: var(--bg-color);
 
-  border-right: 1px solid rgba(139, 92, 246, 0.15);
+  border-right: 1px solid var(--border-color);
   z-index: 9999;
 }
 
@@ -36,14 +31,14 @@
 
   border-radius: 20px;
 
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--card-bg-transparent);
 
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
 
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-color);
 
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 32px var(--glass-shadow);
 }
 
 /* =========================
@@ -135,18 +130,18 @@
   padding: 12px 20px;
   border-radius: 14px;
   text-decoration: none;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--text-primary);
   font-size: 14px;
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .navItem:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
-  border-color: rgba(192, 132, 252, 0.25);
+  background: var(--hover-bg);
+  color: var(--text-primary);
+  border-color: var(--border-color);
   transform: translateY(-2px);
 }
 

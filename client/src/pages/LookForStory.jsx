@@ -264,7 +264,7 @@ const LookForStory = () => {
               currentStory.viewedBy.map((user) => (
                 <Link
                   key={user._id}
-                  to={`/lookfor/${user._id}`}
+                  to={`/lookFor/${user._id}`}
                   className={styles.viewerItem}
                 >
                   <img src={user.profilePicture} alt="" />

@@ -34,6 +34,12 @@ cron.schedule("*/15 * * * *", async () => {
 
         await story.deleteOne();
 
+        if (story.author && story.author._id) {
+          await User.findByIdAndUpdate(story.author._id, {
+            $pull: { stories: story._id }
+          });
+        }
+
         console.log(
           `Successfully deleted story ${story._id} of ${story.author?.username || "Unknown User"}`
         );

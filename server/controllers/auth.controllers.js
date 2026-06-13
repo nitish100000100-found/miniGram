@@ -94,14 +94,16 @@ const signIn = async (req, res) => {
     const { username, password } = req.body;
     const user = await User.findOne({ username });
 
-    if (!user) {
-      return res.status(400).json({ message: "Invalid username !" });
+    let isMatch = false;
+    if (user) {
+      isMatch = await bcrypt.compare(password, user.password);
+    } else {
+      // Fake compare to prevent timing differences
+      await bcrypt.compare("fake_password", "$2b$10$abcdefghijklmnopqrstuv");
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-
-    if (!isMatch) {
-      return res.status(400).json({ message: "Wrong Password !" });
+    if (!user || !isMatch) {
+      return res.status(400).json({ message: "Invalid username or password" });
     }
 
     const token = await genToken(user._id);
@@ -151,9 +153,7 @@ const sentOtp = async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) {
-      return res
-        .status(404)
-        .json({ message: "User with this email does not exist !" });
+      return res.status(200).json({ message: "If your email is registered, an OTP has been sent!" });
     }
 
     const otp = await sendEmail(email);
@@ -180,7 +180,7 @@ const sentOtp = async (req, res) => {
       },
     );
 
-    return res.status(200).json({ message: "OTP sent successfully !" });
+    return res.status(200).json({ message: "If your email is registered, an OTP has been sent!" });
   } catch (error) {
     return res
       .status(500)

@@ -121,6 +121,12 @@ const UserSchema = new mongoose.Schema(
         type: mongoose.Schema.Types.ObjectId,
         ref: "Loop",
       }
+    ],
+    stories:[
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Story",
+      }
     ]
   },
   {

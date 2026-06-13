@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import axios from "axios";
@@ -15,6 +16,8 @@ import styles from "./PostCard.module.css";
 const API_URL = import.meta.env.VITE_API_URL;
 
 function PostCard({ post, currentUser, setCurrentUser, setPosts }) {
+  const [showHeartPop, setShowHeartPop] = useState(false);
+
   // Derive liked and saved status directly from currentUser and post props
   const isLiked = currentUser?.likedPosts?.some(
     (id) => id.toString() === post._id.toString()
@@ -23,6 +26,16 @@ function PostCard({ post, currentUser, setCurrentUser, setPosts }) {
     (id) => id.toString() === post._id.toString()
   );
   const likesCount = post.likes?.length || 0;
+
+  const handleDoubleClick = () => {
+    if (!isLiked) {
+      handleLike();
+    }
+    setShowHeartPop(true);
+    setTimeout(() => {
+      setShowHeartPop(false);
+    }, 800);
+  };
 
   const handleLike = async () => {
     if (!currentUser) return;
@@ -92,16 +105,21 @@ function PostCard({ post, currentUser, setCurrentUser, setPosts }) {
   const isMe = author._id === currentUser?._id;
   const authorProfileLink = isMe ? "/myInfo" : `/lookFor/${author._id}`;
 
+  const hasAuthorStory = author.stories && author.stories.length > 0;
+  const authorStoryLink = hasAuthorStory
+    ? `/lookForStory/${author.stories[0]._id || author.stories[0]}`
+    : authorProfileLink;
+
   return (
     <div className={styles.postCard}>
       {/* Post Header */}
       <div className={styles.header}>
         <div className={styles.authorInfo}>
-          <Link to={authorProfileLink}>
+          <Link to={authorStoryLink}>
             <img
               src={author.profilePicture || "/insta.webp"}
               alt={author.username || "user"}
-              className={styles.authorAvatar}
+              className={`${styles.authorAvatar} ${hasAuthorStory ? styles.avatarWithStory : ""}`}
             />
           </Link>
           <div className={styles.meta}>
@@ -117,7 +135,7 @@ function PostCard({ post, currentUser, setCurrentUser, setPosts }) {
       </div>
 
       {/* Post Media */}
-      <div className={styles.mediaContainer}>
+      <div className={styles.mediaContainer} onDoubleClick={handleDoubleClick}>
         {post.mediaType === "image" ? (
           <img
             src={post.mediaUrl}
@@ -132,6 +150,11 @@ function PostCard({ post, currentUser, setCurrentUser, setPosts }) {
             controls
           />
         )}
+        {showHeartPop && (
+          <div className={styles.heartOverlay}>
+            <FaHeart size={70} className={styles.popHeartIcon} />
+          </div>
+        )}
       </div>
 
       {/* Action Buttons */}
@@ -143,9 +166,10 @@ function PostCard({ post, currentUser, setCurrentUser, setPosts }) {
           >
             {isLiked ? <FaHeart /> : <FaRegHeart />}
           </button>
-          <button className={styles.actionBtn}>
+          <Link to={`/commentpage/${post._id}`} className={styles.actionBtn}>
             <FaRegComment />
-          </button>
+            <span className={styles.commentCount}>{post.comments?.length || 0}</span>
+          </Link>
           <button className={styles.actionBtn}>
             <FaRegPaperPlane />
           </button>

@@ -38,9 +38,14 @@ const addStory = async (req, res) => {
       mediaType: result.resource_type === "video" ? "video" : "image",
     });
 
+    await User.findByIdAndUpdate(userId, { $push: { stories: story._id } });
+
+    const responseStory = story.toObject();
+    delete responseStory.mediaPublicId;
+
     return res.status(201).json({
       message: "Story created successfully",
-      story,
+      story: responseStory,
     });
   } catch (error) {
     if (uploadedPublicId) {
@@ -86,6 +91,8 @@ const deleteStory = async (req, res) => {
 
     await story.deleteOne();
 
+    await User.findByIdAndUpdate(story.author, { $pull: { stories: story._id } });
+
     return res.status(200).json({
       message: "Story deleted successfully",
     });
@@ -102,6 +109,7 @@ const getOneStory = async (req, res) => {
     const myId = req.userId;
 
     const currentStory = await Story.findById(storyId)
+      .select("-mediaPublicId")
       .populate("author", "name username profilePicture")
       .populate("viewedBy", "username profilePicture");
     if (!currentStory) {
@@ -158,6 +166,7 @@ const getOneStory = async (req, res) => {
     }
 
     const updatedStory = await Story.findById(storyId)
+      .select("-mediaPublicId")
       .populate("author", "name username profilePicture")
       .populate("viewedBy", "username profilePicture");
 
@@ -210,6 +219,7 @@ const getAllStories = async (req, res) => {
       author: owner._id,
       deleteAt: { $gt: new Date() },
     })
+      .select("-mediaPublicId")
       .populate("author", "name username profilePicture")
       .populate("viewedBy", "username profilePicture")
       .sort({ createdAt: 1 });

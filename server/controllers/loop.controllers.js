@@ -61,9 +61,12 @@ import path from "path";
 
     await session.commitTransaction();
 
+    const responseLoop = loop.toObject();
+    delete responseLoop.public_id;
+
     return res.status(201).json({
       message: "Loop uploaded successfully",
-      loop,
+      loop: responseLoop,
     });
   } catch (error) {
     if (session?.inTransaction()) {
@@ -410,6 +413,7 @@ const getLoops = async (req, res) => {
     const authorIds = validAuthors.map((u) => u._id);
 
     const loops = await Loop.find({ author: { $in: authorIds } })
+      .select("-public_id")
       .populate("author", "username profilePicture name")
       .populate("comments.commentedBy", "username profilePicture name")
       .sort({ createdAt: -1 });
@@ -432,6 +436,7 @@ const getLoopById = async (req, res) => {
     }
 
     const loop = await Loop.findById(loopId)
+      .select("-public_id")
       .populate("author", "username profilePicture name isPrivate followers blockedUsers")
       .populate("comments.commentedBy", "username profilePicture name");
 
@@ -465,6 +470,7 @@ const getLoopById = async (req, res) => {
       delete safeLoop.author.blockedUsers;
       delete safeLoop.author.followers;
       delete safeLoop.author.isPrivate;
+      delete safeLoop.author.email;
       return res.status(200).json({ loop: safeLoop });
     }
 
@@ -505,6 +511,7 @@ const getLoopById = async (req, res) => {
     delete safeLoop.author.blockedUsers;
     delete safeLoop.author.followers;
     delete safeLoop.author.isPrivate;
+    delete safeLoop.author.email;
     return res.status(200).json({ loop: safeLoop });
   } catch (error) {
     return res.status(500).json({

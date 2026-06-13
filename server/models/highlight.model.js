@@ -40,7 +40,13 @@ const HighlightSchema = new mongoose.Schema(
         publicId: {
           type: String,
           required: true,
-        }
+        },
+        likes: [
+          {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+          }
+        ]
       },
     ],
   },

@@ -88,7 +88,23 @@
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
-  border: 1.5px solid rgba(139, 92, 246, 0.4);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  transition: transform 0.2s ease;
+}
+
+.avatarWithStory {
+  border: 1.5px solid transparent !important;
+  background: linear-gradient(#100b26, #100b26) padding-box,
+              linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%) border-box !important;
+  box-shadow: 0 0 8px rgba(220, 39, 67, 0.7);
+  padding: 1.5px;
+}
+
+.userInfoLink {
+  text-decoration: none;
+  flex: 1;
+  min-width: 0;
+  display: flex;
 }
 
 .userInfo {

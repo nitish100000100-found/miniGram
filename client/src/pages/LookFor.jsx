@@ -34,6 +34,17 @@ function LookFor() {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setnotFound] = useState(false);
+  const [heartPopPostId, setHeartPopPostId] = useState(null);
+
+  const handleDoubleClick = (postId, isLiked) => {
+    if (!isLiked) {
+      handleLike(postId, isLiked);
+    }
+    setHeartPopPostId(postId);
+    setTimeout(() => {
+      setHeartPopPostId(null);
+    }, 800);
+  };
 
   //current user is me
   // user is the one i'm looking for
@@ -140,13 +151,9 @@ function LookFor() {
     getProfile();
   }, [id]);
 
-  const isFollowing = currentUser?.following?.some(
-    (id) => id.toString() === user?._id?.toString(),
-  );
+  const isFollowing = user?.isFollowing;
 
-  const requestSent = currentUser?.sendRequest?.some(
-    (id) => id.toString() === user?._id?.toString(),
-  );
+  const requestSent = user?.isRequested;
   const canViewProfile =
     !user?.isPrivate ||
     isFollowing ||
@@ -171,6 +178,7 @@ function LookFor() {
         }));
         setUser((prev) => ({
           ...prev,
+          isFollowing: true,
           followers: [...(prev.followers || []), currentUser._id],
           followersLength: (prev.followersLength ?? prev.followers?.length ?? 0) + 1,
         }));
@@ -178,6 +186,10 @@ function LookFor() {
         setCurrentUser((prev) => ({
           ...prev,
           sendRequest: [...(prev.sendRequest || []), user._id],
+        }));
+        setUser((prev) => ({
+          ...prev,
+          isRequested: true,
         }));
       }
     } catch (error) {
@@ -205,6 +217,7 @@ function LookFor() {
       }));
       setUser((prev) => ({
         ...prev,
+        isFollowing: false,
         followers: (prev.followers || []).filter(
           (followerId) => followerId !== currentUser._id,
         ),
@@ -232,6 +245,10 @@ function LookFor() {
         sendRequest: (prev.sendRequest || []).filter(
           (requestId) => requestId !== user._id,
         ),
+      }));
+      setUser((prev) => ({
+        ...prev,
+        isRequested: false,
       }));
     } catch (error) {
       console.error(error);
@@ -268,11 +285,21 @@ function LookFor() {
       {/* PROFILE */}
       <div className={styles.profileCard}>
         <div className={styles.left}>
-          <img
-            src={user.profilePicture || "/insta.webp"}
-            alt={user.name}
-            className={styles.avatar}
-          />
+          {user.stories && user.stories.length > 0 ? (
+            <Link to={`/lookForStory/${user.stories[0]._id || user.stories[0]}`}>
+              <img
+                src={user.profilePicture || "/insta.webp"}
+                alt={user.name}
+                className={`${styles.avatar} ${styles.avatarWithStory}`}
+              />
+            </Link>
+          ) : (
+            <img
+              src={user.profilePicture || "/insta.webp"}
+              alt={user.name}
+              className={styles.avatar}
+            />
+          )}
         </div>
 
         <div className={styles.right}>
@@ -468,7 +495,7 @@ function LookFor() {
                         <img
                           src={user.profilePicture || "/insta.webp"}
                           alt="Author Avatar"
-                          className={styles.postAuthorAvatar}
+                          className={`${styles.postAuthorAvatar} ${user.stories && user.stories.length > 0 ? styles.postAuthorAvatarWithStory : ""}`}
                         />
                         <div className={styles.postMeta}>
                           <span className={styles.postUsername}>{user.username}</span>
@@ -483,7 +510,10 @@ function LookFor() {
                     </div>
 
                     {/* Post Media */}
-                    <div className={styles.postMediaContainer}>
+                    <div
+                      className={styles.postMediaContainer}
+                      onDoubleClick={() => handleDoubleClick(post._id, isLiked)}
+                    >
                       {post.mediaType === "image" ? (
                         <img
                           src={post.mediaUrl}
@@ -498,6 +528,11 @@ function LookFor() {
                           controls
                         />
                       )}
+                      {heartPopPostId === post._id && (
+                        <div className={styles.heartOverlay}>
+                          <FaHeart size={70} className={styles.popHeartIcon} />
+                        </div>
+                      )}
                     </div>
 
                     {/* Action Buttons */}
@@ -509,12 +544,10 @@ function LookFor() {
                         >
                           {isLiked ? <FaHeart /> : <FaRegHeart />}
                         </button>
-                        <button 
-                          className={styles.postActionBtn}
-                          onClick={() => handleComment(post)}
-                        >
+                        <Link to={`/commentpage/${post._id}`} className={styles.postActionBtn}>
                           <FaRegComment />
-                        </button>
+                          <span className={styles.commentCount}>{post.comments?.length || 0}</span>
+                        </Link>
                         <button 
                           className={styles.postActionBtn}
                           onClick={() => handleShare(post)}

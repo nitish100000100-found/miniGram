@@ -30,6 +30,27 @@ function MyInfo() {
 
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [heartPopPostId, setHeartPopPostId] = useState(null);
+  const [theme, setTheme] = useState(localStorage.getItem("theme") || "dark");
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("theme", theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+  };
+
+  const handleDoubleClick = (postId, isLiked) => {
+    if (!isLiked) {
+      handleLike(postId, isLiked);
+    }
+    setHeartPopPostId(postId);
+    setTimeout(() => {
+      setHeartPopPostId(null);
+    }, 800);
+  };
 
   const handleLike = async (postId, isLiked) => {
     if (!user) return;
@@ -107,7 +128,13 @@ function MyInfo() {
         withCredentials: true,
       });
       
-     
+      if (res.data?.user) {
+        setUser((prev) => ({
+          ...prev,
+          isPrivate: res.data.user.isPrivate,
+        }));
+      }
+      window.location.reload();
     } catch (error) {
       console.error("Failed to toggle privacy status:", error);
     }
@@ -170,11 +197,21 @@ function MyInfo() {
       <div className={styles.profileCard}>
         <div className={styles.left}>
           <div className={styles.avatarContainer}>
-            <img
-              src={user.profilePicture || "/insta.webp"}
-              alt={user.name}
-              className={styles.avatar}
-            />
+            {user.stories && user.stories.length > 0 ? (
+              <Link to={`/lookForStory/${user.stories[0]._id || user.stories[0]}`}>
+                <img
+                  src={user.profilePicture || "/insta.webp"}
+                  alt={user.name}
+                  className={`${styles.avatar} ${styles.avatarWithStory}`}
+                />
+              </Link>
+            ) : (
+              <img
+                src={user.profilePicture || "/insta.webp"}
+                alt={user.name}
+                className={styles.avatar}
+              />
+            )}
             <div className={styles.actionLinks}>
               <button
                 type="button"
@@ -190,13 +227,22 @@ function MyInfo() {
         <div className={styles.right}>
           <div className={styles.profileHeader}>
             <h2>@{user.username}</h2>
-            <button
-              type="button"
-              onClick={togglePrivacy}
-              className={styles.privacyToggleBtn}
-            >
-              {user.isPrivate ? "Switch to Public" : "Switch to Private"}
-            </button>
+            <div className={styles.profileHeaderBtns}>
+              <button
+                type="button"
+                onClick={togglePrivacy}
+                className={styles.privacyToggleBtn}
+              >
+                {user.isPrivate ? "Switch to Public" : "Switch to Private"}
+              </button>
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className={styles.themeToggleBtn}
+              >
+                {theme === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode"}
+              </button>
+            </div>
           </div>
 
           <div className={styles.stats}>
@@ -294,7 +340,7 @@ function MyInfo() {
                       <img
                         src={user.profilePicture || "/insta.webp"}
                         alt="Author Avatar"
-                        className={styles.postAuthorAvatar}
+                        className={`${styles.postAuthorAvatar} ${user.stories && user.stories.length > 0 ? styles.postAuthorAvatarWithStory : ""}`}
                       />
                       <div className={styles.postMeta}>
                         <span className={styles.postUsername}>{user.username}</span>
@@ -309,7 +355,10 @@ function MyInfo() {
                   </div>
 
                   {/* Post Media */}
-                  <div className={styles.postMediaContainer}>
+                  <div
+                    className={styles.postMediaContainer}
+                    onDoubleClick={() => handleDoubleClick(post._id, isLiked)}
+                  >
                     {post.mediaType === "image" ? (
                       <img
                         src={post.mediaUrl}
@@ -324,6 +373,11 @@ function MyInfo() {
                         controls
                       />
                     )}
+                    {heartPopPostId === post._id && (
+                      <div className={styles.heartOverlay}>
+                        <FaHeart size={70} className={styles.popHeartIcon} />
+                      </div>
+                    )}
                   </div>
 
                   {/* Action Buttons */}
@@ -335,12 +389,10 @@ function MyInfo() {
                       >
                         {isLiked ? <FaHeart /> : <FaRegHeart />}
                       </button>
-                      <button 
-                        className={styles.postActionBtn}
-                        onClick={() => handleComment(post)}
-                      >
+                      <Link to={`/commentpage/${post._id}`} className={styles.postActionBtn}>
                         <FaRegComment />
-                      </button>
+                        <span className={styles.commentCount}>{post.comments?.length || 0}</span>
+                      </Link>
                       <button 
                         className={styles.postActionBtn}
                         onClick={() => handleShare(post)}

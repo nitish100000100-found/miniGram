@@ -22,6 +22,17 @@ function ExplorePost() {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [heartPopPostId, setHeartPopPostId] = useState(null);
+
+  const handleDoubleClick = (postId, isLiked) => {
+    if (!isLiked) {
+      handleLike(postId, isLiked);
+    }
+    setHeartPopPostId(postId);
+    setTimeout(() => {
+      setHeartPopPostId(null);
+    }, 800);
+  };
 
   useEffect(() => {
     const fetchExploreData = async () => {
@@ -150,18 +161,23 @@ function ExplorePost() {
                 (id) => id.toString() === post._id.toString()
               );
 
+              const hasAuthorStory = post.author.stories && post.author.stories.length > 0;
+              const authorStoryLink = hasAuthorStory
+                ? `/lookForStory/${post.author.stories[0]._id || post.author.stories[0]}`
+                : `/lookFor/${post.author._id}`;
+
               return (
                 <div key={post._id} className={styles.feedPostCard}>
                   {/* Post Header */}
                   <div className={styles.postHeader}>
                     <Link
-                      to={`/lookFor/${post.author._id}`}
+                      to={authorStoryLink}
                       className={styles.postAuthorInfo}
                     >
                       <img
                         src={post.author.profilePicture || "/insta.webp"}
                         alt={post.author.username}
-                        className={styles.postAuthorAvatar}
+                        className={`${styles.postAuthorAvatar} ${hasAuthorStory ? styles.avatarWithStory : ""}`}
                       />
                       <div className={styles.postMeta}>
                         <span className={styles.postUsername}>
@@ -180,7 +196,10 @@ function ExplorePost() {
                   </div>
 
                   {/* Post Media */}
-                  <div className={styles.postMediaContainer}>
+                  <div
+                    className={styles.postMediaContainer}
+                    onDoubleClick={() => handleDoubleClick(post._id, isLiked)}
+                  >
                     {post.mediaType === "image" ? (
                       <img
                         src={post.mediaUrl}
@@ -195,6 +214,11 @@ function ExplorePost() {
                         controls
                       />
                     )}
+                    {heartPopPostId === post._id && (
+                      <div className={styles.heartOverlay}>
+                        <FaHeart size={70} className={styles.popHeartIcon} />
+                      </div>
+                    )}
                   </div>
 
                   {/* Action Buttons */}
@@ -208,9 +232,10 @@ function ExplorePost() {
                       >
                         {isLiked ? <FaHeart /> : <FaRegHeart />}
                       </button>
-                      <button className={styles.postActionBtn}>
+                      <Link to={`/commentpage/${post._id}`} className={styles.postActionBtn}>
                         <FaRegComment />
-                      </button>
+                        <span className={styles.commentCount}>{post.comments?.length || 0}</span>
+                      </Link>
                       <button className={styles.postActionBtn}>
                         <FaRegPaperPlane />
                       </button>

@@ -1,8 +1,10 @@
 import mongoose from "mongoose";
 import User from "../models/user.model.js";
 import Post from "../models/post.model.js";
+import Story from "../models/story.model.js";
 import { uploadToCloudinary, cloudinary } from "../config/cloudinary.js";
 import path from "path";
+
 
 const uploadPost = async (req, res) => {
   let uploadedPublicId = null;
@@ -69,9 +71,12 @@ const uploadPost = async (req, res) => {
 
     await session.commitTransaction();
 
+    const responsePost = post.toObject();
+    delete responsePost.mediaPublicId;
+
     return res.status(201).json({
       message: "Post created successfully",
-      post,
+      post: responsePost,
     });
   } catch (error) {
     if (session?.inTransaction()) {
@@ -246,9 +251,6 @@ const savePost = async (req, res) => {
   }
 };
 
-
-
-
 const getFeedPosts = async (req, res) => {
   try {
     const userId = req.userId;
@@ -258,11 +260,20 @@ const getFeedPosts = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const authorIds = [...me.following, userId];
+    const blockedBy = (
+      await User.find({ blockedUsers: userId }).select("_id")
+    ).map((u) => u._id);
+
+    const excludedUsers = [...me.blockedUsers, ...blockedBy];
+
+    const allowedFollowed = me.following.filter(
+      (id) => !excludedUsers.some((excludedId) => excludedId.toString() === id.toString())
+    );
+    const authorIds = [...allowedFollowed, userId];
 
     const posts = await Post.find({ author: { $in: authorIds } })
-      .populate("author", "username profilePicture name")
-      .populate("comments.commentedBy", "username profilePicture name")
+      .select("-mediaPublicId")
+      .populate("author", "username profilePicture name stories")
       .sort({ createdAt: -1 });
 
     return res.status(200).json({ posts });
@@ -300,8 +311,8 @@ const getExplorePosts = async (req, res) => {
     const authorIds = validAuthors.map((u) => u._id);
 
     const posts = await Post.find({ author: { $in: authorIds } })
-      .populate("author", "username profilePicture name")
-      .populate("comments.commentedBy", "username profilePicture name")
+      .select("-mediaPublicId")
+      .populate("author", "username profilePicture name stories")
       .sort({ createdAt: -1 });
 
     return res.status(200).json({
@@ -366,10 +377,12 @@ const getSavedPosts = async (req, res) => {
       .map((post) => {
         const p = post.toObject();
        
+        delete p.mediaPublicId;
         if (p.author) {
           delete p.author.blockedUsers;
           delete p.author.followers;
           delete p.author.isPrivate;
+          delete p.author.email;
         }
         return p;
       });
@@ -431,6 +444,94 @@ const getSavedPosts = async (req, res) => {
 //   }
 // ]
 
+const getPostComments = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const userId = req.userId;
+
+    if (!postId || !mongoose.Types.ObjectId.isValid(postId)) {
+      return res.status(400).json({ message: "Invalid Post ID" });
+    }
+
+    const post = await Post.findById(postId)
+      .select("-mediaPublicId")
+      .populate("author", "username profilePicture name stories blockedUsers isPrivate followers")
+      .populate({
+        path: "comments.commentedBy",
+        select: "username profilePicture name stories blockedUsers",
+      });
+
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    const postAuthor = post.author;
+    if (!postAuthor) {
+      return res.status(404).json({ message: "Post author not found" });
+    }
+
+    const me = await User.findById(userId).select("blockedUsers");
+    if (!me) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const myId = me._id.toString();
+    const isSelf = postAuthor._id.toString() === myId;
+
+    if (!isSelf) {
+      const blockedByEachOther =
+        postAuthor.blockedUsers?.some((id) => id.toString() === myId) ||
+        me.blockedUsers?.some((id) => id.toString() === postAuthor._id.toString());
+
+      if (blockedByEachOther) {
+        return res.status(403).json({
+          message: "You are blocked by this user or you have blocked this user",
+        });
+      }
+
+      if (postAuthor.isPrivate) {
+        const isFollowed = postAuthor.followers?.some((id) => id.toString() === myId);
+        if (!isFollowed) {
+          return res.status(403).json({ message: "Private Account" });
+        }
+      }
+    }
+
+    const safePost = post.toObject();
+
+    safePost.comments = (safePost.comments || [])
+      .filter((c) => {
+        const commenter = c.commentedBy;
+        if (!commenter) return false;
+
+        const commenterBlockedMe = commenter.blockedUsers?.some((id) => id.toString() === myId);
+        const iBlockedCommenter = me.blockedUsers?.some(
+          (id) => id.toString() === commenter._id.toString()
+        );
+
+        return !commenterBlockedMe && !iBlockedCommenter;
+      })
+      .map((c) => {
+        if (c.commentedBy) delete c.commentedBy.blockedUsers;
+        return c;
+      })
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    delete safePost.author?.blockedUsers;
+    delete safePost.author?.followers;
+
+    const currentUser = await User.findById(userId).select(
+      "username profilePicture name stories likedPosts savedPosts"
+    );
+
+    return res.status(200).json({ post: safePost, currentUser });
+  } catch (error) {
+    return res.status(500).json({
+      message: `Internal Server Error: ${error.message}`,
+    });
+  }
+};
+
 export {
   uploadPost,
   deletePost,
@@ -438,4 +539,5 @@ export {
   getFeedPosts,
   getExplorePosts,
   getSavedPosts,
+  getPostComments,
 };

@@ -128,7 +128,6 @@ const blockUser = async (req, res) => {
   }
 };
 
-
 const comment = async (req, res) => {
   try {
     const { postId } = req.params;
@@ -185,18 +184,15 @@ const comment = async (req, res) => {
       }
     }
 
-    post.comments.push({ commentedBy: userId, text: text.trim() });
+    const newCommentObj = { commentedBy: userId, text: text.trim() };
+    post.comments.push(newCommentObj);
     await post.save();
 
-    // Populate comments.commentedBy
-    const populatedPost = await Post.findById(postId).populate(
-      "comments.commentedBy",
-      "username profilePicture name",
-    );
+    const addedCommentId = post.comments[post.comments.length - 1]._id;
 
     return res.status(201).json({
       message: "Comment added successfully",
-      comments: populatedPost.comments,
+      commentId: addedCommentId,
     });
   } catch (error) {
     return res
@@ -246,14 +242,8 @@ const deleteComment = async (req, res) => {
     );
     await post.save();
 
-    const populatedPost = await Post.findById(postId).populate(
-      "comments.commentedBy",
-      "username profilePicture name",
-    );
-
     return res.status(200).json({
       message: "Comment deleted successfully",
-      comments: populatedPost.comments,
     });
   } catch (error) {
     return res
@@ -361,12 +351,15 @@ const likePost = async (req, res) => {
 
     await session.commitTransaction();
 
+    const responsePost = post.toObject();
+    delete responsePost.mediaPublicId;
+
     return res.status(200).json({
       message: alreadyLiked
         ? "Post unliked successfully"
         : "Post liked successfully",
       liked: !alreadyLiked,
-      post,
+      post: responsePost,
     });
   } catch (error) {
     if (session?.inTransaction()) {
@@ -418,7 +411,7 @@ const sendFollowRequest = async (req, res) => {
 
     // Check if already following
     const alreadyFollowing = me.following.some(
-      (id) => id.toString() === targetUserId.toString()
+      (id) => id.toString() === targetUserId.toString(),
     );
 
     if (alreadyFollowing) {
@@ -428,7 +421,7 @@ const sendFollowRequest = async (req, res) => {
 
     // Check if request already sent
     const requestSent = me.sendRequest.some(
-      (id) => id.toString() === targetUserId.toString()
+      (id) => id.toString() === targetUserId.toString(),
     );
 
     if (requestSent) {
@@ -499,10 +492,10 @@ const unFollowSomeOne = async (req, res) => {
     }
 
     me.following = me.following.filter(
-      (id) => id.toString() !== targetUserId.toString()
+      (id) => id.toString() !== targetUserId.toString(),
     );
     target.followers = target.followers.filter(
-      (id) => id.toString() !== userId.toString()
+      (id) => id.toString() !== userId.toString(),
     );
 
     await me.save({ session });
@@ -546,10 +539,10 @@ const cancelSendedFollowRequest = async (req, res) => {
     }
 
     me.sendRequest = me.sendRequest.filter(
-      (id) => id.toString() !== targetUserId.toString()
+      (id) => id.toString() !== targetUserId.toString(),
     );
     target.receivedRequest = target.receivedRequest.filter(
-      (id) => id.toString() !== userId.toString()
+      (id) => id.toString() !== userId.toString(),
     );
 
     await me.save({ session });
@@ -593,19 +586,21 @@ const acceptFollowRequest = async (req, res) => {
     }
 
     const hasRequest = me.receivedRequest.some(
-      (id) => id.toString() === requesterId.toString()
+      (id) => id.toString() === requesterId.toString(),
     );
 
     if (!hasRequest) {
       await session.abortTransaction();
-      return res.status(400).json({ message: "No follow request from this user" });
+      return res
+        .status(400)
+        .json({ message: "No follow request from this user" });
     }
 
     me.receivedRequest = me.receivedRequest.filter(
-      (id) => id.toString() !== requesterId.toString()
+      (id) => id.toString() !== requesterId.toString(),
     );
     requester.sendRequest = requester.sendRequest.filter(
-      (id) => id.toString() !== userId.toString()
+      (id) => id.toString() !== userId.toString(),
     );
 
     me.followers.push(requesterId);
@@ -652,10 +647,10 @@ const rejectFollowRequest = async (req, res) => {
     }
 
     me.receivedRequest = me.receivedRequest.filter(
-      (id) => id.toString() !== requesterId.toString()
+      (id) => id.toString() !== requesterId.toString(),
     );
     requester.sendRequest = requester.sendRequest.filter(
-      (id) => id.toString() !== userId.toString()
+      (id) => id.toString() !== userId.toString(),
     );
 
     await me.save({ session });
@@ -683,7 +678,7 @@ const getPendingRequests = async (req, res) => {
 
     const me = await User.findById(userId).populate(
       "receivedRequest",
-      "username name profilePicture"
+      "username name profilePicture",
     );
 
     if (!me) {
@@ -749,20 +744,22 @@ const getWhoLikedPost = async (req, res) => {
       }
     }
     const usersWhoLiked = await User.find({
-      _id: { $in: post.likes }
+      _id: { $in: post.likes },
     }).select("_id username name profilePicture blockedUsers");
-    
-    const filteredUsers = usersWhoLiked.filter((u) => {
-      const isBlocked =
-        me.blockedUsers.some((id) => id.toString() === u._id.toString()) ||
-        u.blockedUsers?.some((id) => id.toString() === userId.toString());
-      return !isBlocked;
-    }).map((u) => ({
-      _id: u._id,
-      username: u.username,
-      name: u.name,
-      profilePicture: u.profilePicture,
-    }));
+
+    const filteredUsers = usersWhoLiked
+      .filter((u) => {
+        const isBlocked =
+          me.blockedUsers.some((id) => id.toString() === u._id.toString()) ||
+          u.blockedUsers?.some((id) => id.toString() === userId.toString());
+        return !isBlocked;
+      })
+      .map((u) => ({
+        _id: u._id,
+        username: u.username,
+        name: u.name,
+        profilePicture: u.profilePicture,
+      }));
 
     return res.status(200).json({ users: filteredUsers });
   } catch (error) {

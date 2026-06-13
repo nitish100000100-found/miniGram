@@ -21,6 +21,7 @@ import LookFollowing from './pages/LookFollowing.jsx';
 import LookFollowers from './pages/LookFollowers.jsx';
 import ExplorePost from './pages/ExplorePost.jsx';
 import SeeWhoLiked from './pages/SeeWhoLiked.jsx';
+import CommentPage from './pages/CommentPage.jsx';
 
 const router = createBrowserRouter([
   { path: "/", element: <HomePage /> , loader: protectedLoader},
@@ -84,6 +85,11 @@ const router = createBrowserRouter([
   {
     path: "/seeWhoLiked/:postId",
     element: <SeeWhoLiked />,
+    loader: protectedLoader
+  },
+  {
+    path: "/commentpage/:postId",
+    element: <CommentPage />,
     loader: protectedLoader
   },
 

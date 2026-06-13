@@ -45,14 +45,14 @@ function SuggestedUsers() {
         ? `Follow request sent to @${targetUsername}`
         : `Started following @${targetUsername}`;
 
+      if (!isPrivate) {
+        window.location.reload();
+        return;
+      }
       setNotification(msg);
       setTimeout(() => {
         setNotification(null);
-         window.location.reload();
       }, 1500);
-
-      
-
     } catch (error) {
       console.log(error);
     }
@@ -82,18 +82,34 @@ function SuggestedUsers() {
               <FaTimes />
             </button>
 
-            <Link to={`/lookFor/${user._id}`} className={styles.userLink}>
-              <img
-                src={user.profilePicture || "/insta.webp"}
-                alt={user.name}
-                className={styles.avatar}
-              />
+            <div className={styles.userLink}>
+              {user.stories && user.stories.length > 0 ? (
+                <Link
+                  to={`/lookForStory/${user.stories[0]._id || user.stories[0]}`}
+                >
+                  <img
+                    src={user.profilePicture || "/insta.webp"}
+                    alt={user.name}
+                    className={`${styles.avatar} ${styles.avatarWithStory}`}
+                  />
+                </Link>
+              ) : (
+                <Link to={`/lookFor/${user._id}`}>
+                  <img
+                    src={user.profilePicture || "/insta.webp"}
+                    alt={user.name}
+                    className={styles.avatar}
+                  />
+                </Link>
+              )}
 
-              <div className={styles.userInfo}>
-                <h4>{user.name}</h4>
-                <p>@{user.username || "user"}</p>
-              </div>
-            </Link>
+              <Link to={`/lookFor/${user._id}`} className={styles.userInfoLink}>
+                <div className={styles.userInfo}>
+                  <h4>{user.name}</h4>
+                  <p>@{user.username || "user"}</p>
+                </div>
+              </Link>
+            </div>
 
             <button
               className={styles.requestBtn}
