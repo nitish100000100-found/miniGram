@@ -267,7 +267,7 @@ const LookForStory = () => {
                   to={`/lookFor/${user._id}`}
                   className={styles.viewerItem}
                 >
-                  <img src={user.profilePicture} alt="" />
+                  <img src={user.profilePicture || "/insta.webp"} alt="" />
 
                   <span>{user.username}</span>
                 </Link>

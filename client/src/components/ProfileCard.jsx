@@ -49,29 +49,45 @@ function ProfileCard() {
     return <div>Loading...</div>;
   }
 
+  const hasStories = user.stories && user.stories.length > 0;
+
   return (
-<div className={styles.profileCard}>
-  <Link to="/myInfo" className={styles.profileLink}>
-    <img
-      src={user.profilePicture || "/insta.webp"}
-      alt={user.name}
-      className={styles.profileImage}
-    />
+    <div className={styles.profileCard}>
+      <div className={styles.profileLeft}>
+        {hasStories ? (
+          <Link to={`/lookForStory/${user.stories[0]._id || user.stories[0]}`}>
+            <img
+              src={user.profilePicture || "/insta.webp"}
+              alt={user.name}
+              className={`${styles.profileImage} ${styles.avatarWithStory}`}
+            />
+          </Link>
+        ) : (
+          <Link to="/myInfo">
+            <img
+              src={user.profilePicture || "/insta.webp"}
+              alt={user.name}
+              className={styles.profileImage}
+            />
+          </Link>
+        )}
 
-    <div className={styles.userInfo}>
-      <h3>{user.name}</h3>
-      <p>@{user.username}</p>
+        <Link to="/myInfo" className={styles.profileLink}>
+          <div className={styles.userInfo}>
+            <h3>{user.name}</h3>
+            <p>@{user.username}</p>
+          </div>
+        </Link>
+      </div>
+
+      <button
+        onClick={handleLogout}
+        className={styles.logoutBtn}
+      >
+        Logout
+      </button>
     </div>
-  </Link>
-
-  <button
-    onClick={handleLogout}
-    className={styles.logoutBtn}
-  >
-    Logout
-  </button>
-</div>
-);
+  );
 }
 
 export default ProfileCard;
