@@ -31,16 +31,7 @@ function MyInfo() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [heartPopPostId, setHeartPopPostId] = useState(null);
-  const [theme, setTheme] = useState(localStorage.getItem("theme") || "dark");
 
-  useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("theme", theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
-  };
 
   const handleDoubleClick = (postId, isLiked) => {
     if (!isLiked) {
@@ -227,22 +218,13 @@ function MyInfo() {
         <div className={styles.right}>
           <div className={styles.profileHeader}>
             <h2>@{user.username}</h2>
-            <div className={styles.profileHeaderBtns}>
-              <button
-                type="button"
-                onClick={togglePrivacy}
-                className={styles.privacyToggleBtn}
-              >
-                {user.isPrivate ? "Switch to Public" : "Switch to Private"}
-              </button>
-              <button
-                type="button"
-                onClick={toggleTheme}
-                className={styles.themeToggleBtn}
-              >
-                {theme === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode"}
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={togglePrivacy}
+              className={styles.privacyToggleBtn}
+            >
+              {user.isPrivate ? "Switch to Public" : "Switch to Private"}
+            </button>
           </div>
 
           <div className={styles.stats}>
