@@ -1,0 +1,8 @@
+.mobileLayout {
+  min-height: 100vh;
+  padding-top: 70px; /* Accounts for fixed MobileTopBar */
+  padding-bottom: 80px; /* Accounts for fixed BottomNav */
+  display: flex;
+  flex-direction: column;
+  background-color: #0c0720;
+}

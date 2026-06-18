@@ -1,0 +1,200 @@
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  padding: 24px 16px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+
+  background: linear-gradient(
+    180deg,
+    #0c0720 0%,
+    #140b32 50%,
+    #1a0d3f 100%
+  );
+
+  border-right: 1px solid rgba(139, 92, 246, 0.15);
+  z-index: 9999;
+}
+
+.sidebar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+
+/* =========================
+   TOP BAR
+========================= */
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 14px 16px;
+
+  border-radius: 20px;
+
+  background: rgba(255, 255, 255, 0.03);
+
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+
+  border: 1px solid rgba(255, 255, 255, 0.06);
+
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+/* =========================
+   BRAND
+========================= */
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.brand h2 {
+  margin: 0;
+
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+
+  background: linear-gradient(
+    135deg,
+    #c084fc,
+    #a855f7,
+    #e9d5ff
+  );
+
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* =========================
+   HEART BUTTON
+========================= */
+
+.heartBtn {
+  width: 40px;
+  height: 40px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  outline: none;
+
+  cursor: pointer;
+
+  background: transparent;
+
+  color: #c084fc;
+  font-size: 1.2rem;
+
+  transition: all 0.25s ease;
+  border-radius: 12px;
+}
+
+.heartBtn:hover {
+  transform: scale(1.08);
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+
+  text-shadow:
+    0 0 12px rgba(192, 132, 252, 0.9),
+    0 0 24px rgba(192, 132, 252, 0.5);
+}
+
+.brandLink {
+  text-decoration: none;
+  color: inherit;
+}
+
+.navLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 8px 0;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  border-radius: 14px;
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 14px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.navItem:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  border-color: rgba(192, 132, 252, 0.25);
+  transform: translateY(-2px);
+}
+
+.navIcon {
+  font-size: 18px;
+  color: #c084fc;
+}
+
+.heartLink {
+  position: relative;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.heartGlow {
+  color: #ff304f !important;
+  filter: drop-shadow(0 0 8px #ff304f);
+  animation: heartPulse 1.5s infinite alternate;
+}
+
+@keyframes heartPulse {
+  0% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 4px #ff304f);
+  }
+  100% {
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 12px #ff304f);
+  }
+}
+
+.badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background-color: #ff304f;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: bold;
+  border-radius: 50%;
+  padding: 1px 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 12px;
+  height: 12px;
+  box-shadow: 0 0 6px rgba(255, 48, 79, 0.6);
+  z-index: 10;
+}

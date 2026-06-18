@@ -1,0 +1,287 @@
+.page {
+  min-height: 100vh;
+  padding: 40px 24px;
+  background: #0c0720;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #f3e8ff;
+}
+
+.loaderContainer {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #0c0720;
+}
+
+.editProfileCard {
+  width: 100%;
+  max-width: 500px;
+  padding: 40px;
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(139, 92, 246, 0.15);
+  border-radius: 24px;
+  box-shadow: 0 12px 40px rgba(147, 51, 234, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  transition: all 0.3s ease;
+}
+
+.editProfileCard:hover {
+  border-color: rgba(139, 92, 246, 0.25);
+  box-shadow: 0 16px 48px rgba(147, 51, 234, 0.18);
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.backBtn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #e5e7eb;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  outline: none;
+}
+
+.backBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(139, 92, 246, 0.3);
+  transform: translateX(-2px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
+}
+
+.heading {
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #c084fc, #a855f7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.errorBox {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 12px;
+  padding: 12px 20px;
+  color: #fca5a5;
+  font-size: 13.5px;
+}
+
+.errorBox ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.errorBox li {
+  margin-bottom: 4px;
+}
+
+.errorBox li:last-child {
+  margin-bottom: 0;
+}
+
+.profileSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.profileSection label {
+  cursor: pointer;
+}
+
+.profileImage {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid rgba(147, 51, 234, 0.6);
+  box-shadow: 0 0 20px rgba(147, 51, 234, 0.3);
+  transition: all 0.3s ease;
+}
+
+.profileImage:hover {
+  transform: scale(1.04);
+  border-color: rgba(168, 85, 247, 0.8);
+  box-shadow: 0 0 25px rgba(168, 85, 247, 0.55);
+}
+
+.changeText {
+  font-size: 13px;
+  font-weight: 600;
+  color: #a78bfa;
+  margin: 0;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.changeText:hover {
+  color: #c084fc;
+}
+
+.removePicBtn {
+  background: none;
+  border: none;
+  padding: 0;
+  outline: none;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #ef4444;
+  margin-top: 4px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.removePicBtn:hover {
+  color: #f87171;
+  text-decoration: underline;
+}
+
+.editProfileCard input[type="text"],
+.editProfileCard textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: #ffffff;
+  outline: none;
+  font-size: 14px;
+  font-family: inherit;
+  transition: all 0.25s ease;
+  box-sizing: border-box;
+}
+
+.editProfileCard input[type="text"]::placeholder,
+.editProfileCard textarea::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.editProfileCard input[type="text"]:focus,
+.editProfileCard textarea:focus {
+  border-color: rgba(168, 85, 247, 0.6);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.15);
+}
+
+.editProfileCard textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.genderSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 5px;
+}
+
+.genderLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: #a78bfa;
+  margin: 0;
+}
+
+.genderOptions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.genderOption {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.genderOption input[type="radio"] {
+  accent-color: #a855f7;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.genderOption:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(168, 85, 247, 0.3);
+}
+
+.genderOption:has(input:checked) {
+  background: rgba(147, 51, 234, 0.1);
+  border-color: rgba(147, 51, 234, 0.5);
+  color: #ffffff;
+}
+
+.saveBtn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+}
+
+.saveBtn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #8b5cf6, #a855f7);
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.45);
+}
+
+.saveBtn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.saveBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+  .editProfileCard {
+    padding: 24px;
+  }
+  
+  .genderOptions {
+    grid-template-columns: 1fr;
+  }
+}
